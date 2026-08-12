@@ -101,7 +101,7 @@ export function Layout({ children }: LayoutProps) {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="vortex-header bg-background/90 backdrop-blur-md border-b border-border/60 px-4 py-3 md:px-8 flex items-center justify-between sticky top-0 z-20">
+        <header className="vortex-header bg-background/90 backdrop-blur-md border-b border-border/60 px-4 py-3.5 md:px-8 flex items-center justify-between sticky top-0 z-20 pt-[max(0.875rem,env(safe-area-inset-top))]">
           <div className="flex items-center gap-3">
             <button aria-label="Abrir menu" onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 -ml-2 hover:bg-primary/10 rounded-lg transition-colors">{sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}</button>
             <Link href="/profile" aria-label="Abrir perfil" className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full border border-[#caa85e]/40 bg-card/80 hover:border-[#caa85e] transition-colors wand-click">
