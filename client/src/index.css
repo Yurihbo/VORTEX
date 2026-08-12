@@ -750,3 +750,67 @@
   :not(.dark) .vortex-card a:not(.vortex-button-primary),
   :not(.dark) .vortex-card button { color: #f2df9e; }
 }
+
+@layer components {
+  /* Contraste dedicado para os estados da Biblioteca e da aba Em leitura. */
+  .status-filter-select {
+    appearance: none;
+    min-width: 9.5rem;
+    color: #f2df9e;
+    background-color: #0b1328;
+    border-color: rgba(202,168,94,.7);
+    font-weight: 700;
+    letter-spacing: .01em;
+  }
+
+  .status-filter-select:hover,
+  .status-filter-select:focus-visible {
+    color: #fff2bd;
+    background-color: #111e3b;
+    border-color: #d8b969;
+    outline: 2px solid rgba(216,185,105,.3);
+    outline-offset: 2px;
+  }
+
+  .status-filter-select option {
+    color: #f2df9e;
+    background: #0b1328;
+  }
+
+  .status-chip {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: .35rem;
+    padding: .28rem .55rem;
+    border: 1px solid rgba(216,185,105,.58);
+    border-radius: .35rem;
+    background: rgba(11,19,40,.78);
+    color: #f2df9e !important;
+    font-weight: 800;
+    text-shadow: 0 1px 8px rgba(0,0,0,.35);
+  }
+
+  .status-chip-reading {
+    border-color: rgba(102,154,255,.82);
+    background: rgba(37,76,151,.58);
+    color: #eaf1ff !important;
+  }
+
+  .status-chip-completed {
+    border-color: rgba(216,185,105,.76);
+    background: rgba(107,76,22,.56);
+  }
+
+  .status-chip-want-to-read,
+  .status-chip-paused {
+    border-color: rgba(216,185,105,.58);
+    background: rgba(27,36,63,.78);
+  }
+
+  :not(.dark) .status-filter-select {
+    color: #f2df9e;
+    background-color: #0b1328;
+    border-color: #b8944d;
+  }
+}

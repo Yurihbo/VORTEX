@@ -1,7 +1,7 @@
-# Ajuste de contraste dourado no modo claro
+# Correção dos seletores de status
 
-- [x] Auditar os estilos de cartões e textos no modo claro.
-- [x] Aplicar dourado VORTEX a títulos, nomes de livros, números e informações dos blocos azul-escuros.
-- [x] Preservar as cores atuais do modo escuro.
-- [x] Validar contraste, responsividade, TypeScript e build.
+- [x] Auditar os seletores e estilos de status da Biblioteca e Leitura.
+- [x] Aplicar fundos, bordas e textos contrastantes aos estados dos seletores.
+- [x] Garantir legibilidade para “Em leitura”, “Quero ler”, “Concluídos” e demais estados.
+- [x] Validar os seletores nos temas claro e escuro, além do TypeScript e build.
 - [ ] Criar checkpoint da correção.
