@@ -1,10 +1,11 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { BarChart3, BookOpen, Download, Flame, Heart, Home, Menu, Moon, Sparkles, Sun, Target, Trophy, UserRound, WifiOff, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { VortexLogo } from './VortexLogo';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from './ui/button';
+import { storageService } from '@/services/storage';
 
 interface LayoutProps { children: ReactNode; }
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>; };
@@ -26,6 +27,8 @@ export function Layout({ children }: LayoutProps) {
   const [isStandalone, setIsStandalone] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const { theme, toggleTheme } = useTheme();
+  const [location] = useLocation();
+  const [profile, setProfile] = useState(() => storageService.getUserProfile());
 
   useEffect(() => {
     const media = window.matchMedia('(display-mode: standalone)');
@@ -36,17 +39,20 @@ export function Layout({ children }: LayoutProps) {
     };
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
+    const handleProfileUpdated = () => setProfile(storageService.getUserProfile());
     updateStandalone();
     setIsOnline(navigator.onLine);
     window.addEventListener('beforeinstallprompt', handleInstallPrompt);
     window.addEventListener('appinstalled', () => { setDeferredPrompt(null); setIsStandalone(true); toast.success('Vortex instalada neste dispositivo.'); });
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('vortex-profile-updated', handleProfileUpdated);
     media.addEventListener?.('change', updateStandalone);
     return () => {
       window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('vortex-profile-updated', handleProfileUpdated);
       media.removeEventListener?.('change', updateStandalone);
     };
   }, []);
@@ -73,7 +79,7 @@ export function Layout({ children }: LayoutProps) {
             </Link>
           </div>
           <div className="px-6 pt-6 pb-3"><p className="eyebrow">Navegação</p></div>
-          <nav className="flex-1 overflow-y-auto px-3"><ul className="space-y-1">{navigationItems.map(item => { const Icon = item.icon; return <li key={item.href}><Link href={item.href} onClick={() => setSidebarOpen(false)} className="nav-link"><Icon className="h-[17px] w-[17px]" /> <span>{item.label}</span></Link></li>; })}</ul></nav>
+          <nav className="flex-1 overflow-y-auto px-3"><ul className="space-y-1">{navigationItems.map(item => { const Icon = item.icon; return <li key={item.href}><Link href={item.href} onClick={() => setSidebarOpen(false)} data-active={location === item.href || (item.href !== '/' && location.startsWith(item.href)) ? 'true' : undefined} className="nav-link"><Icon className="h-[17px] w-[17px]" /> <span>{item.label}</span></Link></li>; })}</ul></nav>
           <div className="p-4 border-t border-border/60 space-y-3">
             {isOnline ? <div className="flex items-center gap-2 px-3 text-xs text-muted-foreground"><Sparkles className="h-3.5 w-3.5 text-[#caa85e]" /> Outra história espera por você.</div> : <div className="offline-badge"><WifiOff className="h-3.5 w-3.5" /> Modo offline ativo</div>}
             {!isStandalone && <Button variant="outline" size="sm" onClick={installApp} className="w-full justify-start gap-2 border-[#caa85e]/35 text-[#caa85e]"><Download className="w-4 h-4" /> Instalar Vortex</Button>}
@@ -85,7 +91,7 @@ export function Layout({ children }: LayoutProps) {
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="vortex-header bg-background/90 backdrop-blur-md border-b border-border/60 px-4 py-3 md:px-8 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-3"><button aria-label="Abrir menu" onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 -ml-2 hover:bg-primary/10 rounded-lg transition-colors">{sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}</button><div className="md:hidden flex items-center gap-2"><VortexLogo size="sm" className="text-[#caa85e]" /><span className="font-serif text-lg tracking-widest text-[#caa85e]">VORTEX</span></div></div>
+          <div className="flex items-center gap-3"><button aria-label="Abrir menu" onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 -ml-2 hover:bg-primary/10 rounded-lg transition-colors">{sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}</button><Link href="/profile" aria-label="Abrir perfil" className="profile-mini-link wand-click">{profile.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : <UserRound className="h-4 w-4" />}<span className="sr-only">Perfil de {profile.displayName}</span></Link><div className="md:hidden flex items-center gap-2"><VortexLogo size="sm" className="text-[#caa85e]" /><span className="font-serif text-lg tracking-widest text-[#caa85e]">VORTEX</span></div></div>
           <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">{isOnline ? <><Sparkles className="h-4 w-4 text-[#caa85e]" /> Bem-vindo à Vortex</> : <><WifiOff className="h-4 w-4 text-[#caa85e]" /> Você está offline</>}</div>
           <div className="flex items-center gap-2">{deferredPrompt && !isStandalone && <Button variant="outline" size="sm" onClick={installApp} className="hidden sm:inline-flex border-[#caa85e]/35 text-[#caa85e]"><Download className="h-4 w-4 mr-2" /> Instalar app</Button>}<Link href="/add-book" className="header-add-button"><span className="text-lg leading-none">+</span><span className="hidden sm:inline">Adicionar tomo</span></Link></div>
         </header>

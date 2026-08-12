@@ -1,4 +1,4 @@
-import { Book, ReadingGoal, Achievement, ReadingStreak, LibraryStats } from '@/types/book';
+import { Book, ReadingGoal, Achievement, ReadingStreak, LibraryStats, UserProfile } from '@/types/book';
 
 const STORAGE_KEYS = {
   BOOKS: 'vortex_books',
@@ -7,6 +7,15 @@ const STORAGE_KEYS = {
   READING_STREAK: 'vortex_reading_streak',
   LIBRARY_STATS: 'vortex_library_stats',
   USER_PROFILE: 'vortex_user_profile',
+};
+
+const DEFAULT_PROFILE: UserProfile = {
+  displayName: 'Leitor Vortex',
+  bio: 'Uma biblioteca pessoal para manter próximas as histórias que ainda têm algo a revelar.',
+  totalReadingHours: 0,
+  favoriteBook: '',
+  favoriteCharacter: '',
+  favoriteVillain: '',
 };
 
 // Default demo books
@@ -124,6 +133,20 @@ const DEFAULT_BOOKS: Book[] = [
 ];
 
 export const storageService = {
+  // Profile
+  getUserProfile(): UserProfile {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+      return data ? { ...DEFAULT_PROFILE, ...JSON.parse(data) } : DEFAULT_PROFILE;
+    } catch {
+      return DEFAULT_PROFILE;
+    }
+  },
+
+  saveUserProfile(profile: UserProfile): void {
+    localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
+  },
+
   // Books
   getBooks(): Book[] {
     try {
@@ -248,6 +271,7 @@ export const storageService = {
       readingGoal: this.getReadingGoal(),
       achievements: this.getAchievements(),
       readingStreak: this.getReadingStreak(),
+      userProfile: this.getUserProfile(),
       exportDate: new Date().toISOString(),
     };
     return JSON.stringify(data, null, 2);
@@ -261,6 +285,7 @@ export const storageService = {
         if (data.readingGoal) this.saveReadingGoal(data.readingGoal);
         if (data.achievements) this.saveAchievements(data.achievements);
         if (data.readingStreak) this.saveReadingStreak(data.readingStreak);
+        if (data.userProfile) this.saveUserProfile({ ...DEFAULT_PROFILE, ...data.userProfile });
         return true;
       }
       return false;

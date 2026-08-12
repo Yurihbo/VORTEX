@@ -65,3 +65,13 @@ export interface LibraryStats {
   booksThisMonth: number;
   booksThisYear: number;
 }
+
+export interface UserProfile {
+  displayName: string;
+  bio: string;
+  avatarUrl?: string;
+  totalReadingHours: number;
+  favoriteBook: string;
+  favoriteCharacter: string;
+  favoriteVillain: string;
+}

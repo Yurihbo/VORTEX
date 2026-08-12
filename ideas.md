@@ -204,3 +204,12 @@ Este azul místico é imediatamente reconhecível como a cor da VORTEX — apare
 - Book covers are treated as artifacts: even placeholder covers require tactile paper/leather texture, a seal, rune, archive mark, or ornamental plate so every tomo feels collected from an ancient library.
 - Dashboard, goals, and statistics modules receive subtle celestial, manuscript, and rune motifs so the narrative appears in the material of the interface, not only in its copy.
 - The VORTEX spiral mark, ceremonial wordmark, and gold linework recur in navigation, major section headers, and primary panels as a consistent identity stamp.
+
+
+### Decisões adicionais do perfil
+
+- A sidebar é um fólio de biblioteca em pergaminho: estados ativos cerimoniais, separadores de manuscrito e molduras em ouro/bronze devem substituir a aparência de menu comum.
+- Painéis de métricas e perfil devem parecer artefatos arquivados, com moldura ornamental, marca simbólica e categoria narrativa.
+- Azul Arcano funciona como sinal de joia: aparece em ações primárias/estados ativos e sempre recebe acabamento de ouro envelhecido ou bronze.
+- O mini-ícone do guardião usa avatar circular com aro rúnico e permanece no canto superior esquerdo para criar continuidade entre as abas.
+- A varinha de clique é uma microinteração breve, com um único brilho dourado e respeito a prefers-reduced-motion.

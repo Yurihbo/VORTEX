@@ -1,8 +1,10 @@
-# Ajustes antes do envio ao GitHub
+# Última melhoria do VORTEX
 
-- [x] Remover referências internas a IA, Manus, geração e instruções de desenvolvimento do código e da documentação pública.
-- [x] Implementar seleção de imagem local para capa ao criar um tomo.
-- [x] Exibir pré-visualização da capa escolhida e manter a imagem no registro local do livro.
-- [x] Adicionar “Yurihbo — Autor” fixo no canto inferior esquerdo.
-- [x] Validar o fluxo visual, o TypeScript e o build de produção.
-- [ ] Aguardar a URL do repositório GitHub antes de executar o envio.
+- [x] Auditar o modelo de perfil, o armazenamento local e o layout global.
+- [x] Adicionar foto de perfil com upload, compressão e pré-visualização.
+- [x] Persistir nome, biografia e preferências literárias do usuário.
+- [x] Exibir horas lidas, leitura favorita, livros concluídos, personagem favorito e vilão favorito.
+- [x] Adicionar mini-ícone de perfil com avatar no canto superior esquerdo de todas as abas.
+- [x] Implementar efeito visual leve de varinha nas interações, respeitando redução de movimento.
+- [x] Validar responsividade, TypeScript e build de produção.
+- [ ] Criar checkpoint final desta melhoria.
