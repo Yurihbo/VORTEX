@@ -1,14 +1,20 @@
 {
+  "id": "/",
   "name": "VORTEX — Biblioteca Virtual",
   "short_name": "VORTEX",
   "description": "Uma biblioteca virtual para organizar, descobrir e acompanhar suas jornadas através dos livros.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#101426",
   "theme_color": "#1a1a2e",
   "orientation": "portrait-primary",
   "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["books", "education", "lifestyle"],
+  "prefer_related_applications": false,
   "icons": [
+    { "src": "/manus-storage/vortex-logo_360d1f60.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any maskable" },
     { "src": "/vortex-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }

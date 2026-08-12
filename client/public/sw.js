@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vortex-shell-v1';
+const CACHE_NAME = 'vortex-shell-v2';
 const APP_SHELL = ['/', '/manifest.json', '/vortex-icon.svg'];
 
 self.addEventListener('install', event => {
@@ -7,14 +7,38 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
 
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
-    const copy = response.clone();
-    caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+async function cacheResponse(request) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    if (response.ok && new URL(request.url).origin === self.location.origin) {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(request, response.clone());
+    }
     return response;
-  }).catch(() => caches.match('/'))));
+  } catch {
+    return caches.match('/') || new Response('VORTEX offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  }
+}
+
+async function networkFirstNavigation(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    return caches.match(request) || caches.match('/') || new Response('VORTEX offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  }
+}
+
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
+  event.respondWith(event.request.mode === 'navigate' ? networkFirstNavigation(event.request) : cacheResponse(event.request));
 });

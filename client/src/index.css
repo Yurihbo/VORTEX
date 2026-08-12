@@ -496,3 +496,19 @@
   .vortex-grimoire::before { content: 'ᛟ'; position: absolute; right: 10%; bottom: 8%; color: rgba(202,168,94,.07); font-family: Georgia, serif; font-size: 12rem; line-height: 1; pointer-events: none; transform: rotate(-12deg); }
   .goal-ring::after { content: 'ᛟ'; color: rgba(202,168,94,.18); font-family: Georgia, serif; font-size: 1.2rem; position: absolute; right: -1px; top: 6px; }
 }
+
+@layer components {
+  .offline-badge,
+  .installed-badge {
+    align-items: center;
+    display: flex;
+    gap: .5rem;
+    padding: .15rem .75rem;
+    color: var(--muted-foreground);
+    font-size: .7rem;
+    letter-spacing: .03em;
+  }
+
+  .offline-badge { color: #d5ad63; }
+  .installed-badge { color: #7fa98d; }
+}
