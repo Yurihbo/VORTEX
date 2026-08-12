@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { BarChart3, BookOpen, Download, Flame, Heart, Home, Menu, Moon, Sparkles, Sun, Target, Trophy, UserRound, WifiOff, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -70,7 +70,6 @@ export function Layout({ children }: LayoutProps) {
 
   async function installApp() {
     if (!deferredPrompt) {
-      // Explicar ao usuário como instalar no navegador atual caso o prompt automático não esteja pronto
       toast.info('Para instalar o app, clique no menu do seu navegador (⋮ ou Compartilhar) e selecione "Adicionar à Tela de Início" ou "Instalar aplicativo".', { duration: 6000 });
       return;
     }
@@ -103,8 +102,17 @@ export function Layout({ children }: LayoutProps) {
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="vortex-header bg-background/90 backdrop-blur-md border-b border-border/60 px-4 py-3 md:px-8 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-3"><button aria-label="Abrir menu" onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 -ml-2 hover:bg-primary/10 rounded-lg transition-colors">{sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}</button><Link href="/profile" aria-label="Abrir perfil" className="profile-mini-link wand-click">{profile.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : <UserRound className="h-4 w-4" />}<span className="sr-only">Perfil de {profile.displayName}</span></Link><div className="md:hidden flex items-center gap-2"><VortexLogo size="sm" className="text-[#caa85e]" /><span className="font-serif text-lg tracking-widest text-[#caa85e]">VORTEX</span></div></div>
-          <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">{isOnline ? <><Sparkles className="h-4 w-4 text-[#caa85e]" /> Bem-vindo à Vortex</> : <><WifiOff className="h-4 w-4 text-[#caa85e]" /> Você está offline</>}</div>
+          <div className="flex items-center gap-3">
+            <button aria-label="Abrir menu" onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 -ml-2 hover:bg-primary/10 rounded-lg transition-colors">{sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}</button>
+            <Link href="/profile" aria-label="Abrir perfil" className="flex items-center gap-2.5 profile-mini-link wand-click px-2 py-1 rounded-full border border-[#caa85e]/30 hover:border-[#caa85e] transition-colors">
+              <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center bg-muted">
+                {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.displayName} className="w-full h-full object-cover" /> : <UserRound className="h-4 w-4 text-[#caa85e]" />}
+              </div>
+              <span className="text-xs font-serif font-medium text-foreground max-w-[120px] truncate">{profile.displayName || 'Leitor'}</span>
+            </Link>
+            <div className="md:hidden flex items-center gap-2"><VortexLogo size="sm" className="text-[#caa85e]" /><span className="font-serif text-lg tracking-widest text-[#caa85e]">VORTEX</span></div>
+          </div>
+          <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">{isOnline ? <><Sparkles className="h-4 w-4 text-[#caa85e]" /> Bem-vindo à Vortex, {profile.displayName || 'Leitor'}</> : <><WifiOff className="h-4 w-4 text-[#caa85e]" /> Você está offline</>}</div>
           <div className="flex items-center gap-2">{deferredPrompt && !isStandalone && <Button variant="outline" size="sm" onClick={installApp} className="hidden sm:inline-flex border-[#caa85e]/35 text-[#caa85e]"><Download className="h-4 w-4 mr-2" /> Instalar app</Button>}<Link href="/add-book" className="header-add-button"><span className="text-lg leading-none">+</span><span className="hidden sm:inline">Adicionar tomo</span></Link></div>
         </header>
         <main className="flex-1 overflow-y-auto pb-24 md:pb-8"><div className="vortex-content container mx-auto py-6 md:py-8">{children}</div></main>
