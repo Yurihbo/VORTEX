@@ -70,7 +70,8 @@ export function Layout({ children }: LayoutProps) {
 
   async function installApp() {
     if (!deferredPrompt) {
-      toast.info('Use o menu do navegador para instalar a Vortex quando a opção estiver disponível.');
+      // Explicar ao usuário como instalar no navegador atual caso o prompt automático não esteja pronto
+      toast.info('Para instalar o app, clique no menu do seu navegador (⋮ ou Compartilhar) e selecione "Adicionar à Tela de Início" ou "Instalar aplicativo".', { duration: 6000 });
       return;
     }
     await deferredPrompt.prompt();
