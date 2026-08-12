@@ -4,6 +4,9 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -26,10 +29,11 @@ jobs:
         env:
           VITE_BASE_URL: "/VORTEX/"
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist/public
           publish_branch: gh-pages
-          force_orphan: true
+          commit_message: "deploy: publicar build de produção do VORTEX"
+          force_orphan: false
