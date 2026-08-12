@@ -1,5 +1,5 @@
-import { ChangeEvent, FormEvent, PointerEvent, useRef, useState } from 'react';
-import { Award, BookHeart, BookMarked, Camera, Clock3, Crown, Download, FileUp, ImagePlus, Medal, Save, Shield, Skull, Sparkles, Sword, UserRound, X } from 'lucide-react';
+import { ChangeEvent, FormEvent, PointerEvent, useEffect, useRef, useState } from 'react';
+import { Award, BookHeart, BookMarked, Camera, Clock3, Copy, Crown, Download, FileDown, FileUp, Flame, ImagePlus, Medal, Save, Share2, Shield, Skull, Sparkles, Sword, UserRound, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { storageService } from '@/services/storage';
-import { Book, UserProfile } from '@/types/book';
+import { STREAK_MILESTONES, streakProgress } from '@/lib/readingMilestones';
+import { Book, ReadingStreak, UserProfile } from '@/types/book';
 
 const CROP_SIZE = 300;
 
@@ -66,6 +67,74 @@ function medalProgress(rule: MedalRule, booksRead: number, hoursRead: number) {
   return { current, percentage: Math.min(100, Math.round((current / rule.target) * 100)), unlocked: current >= rule.target };
 }
 
+function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Não foi possível preparar o cartão.')), 'image/png'));
+}
+
+function drawAchievementCard(profile: UserProfile, booksRead: number, hoursRead: number, streak: ReadingStreak, unlockedMedals: number, unlockedStreakMedals: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 630;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      reject(new Error('Seu navegador não permitiu criar o cartão.'));
+      return;
+    }
+    const gradient = context.createLinearGradient(0, 0, 1200, 630);
+    gradient.addColorStop(0, '#0b1224');
+    gradient.addColorStop(0.58, '#15213b');
+    gradient.addColorStop(1, '#070b16');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.strokeStyle = '#caa85e';
+    context.lineWidth = 2;
+    context.strokeRect(28, 28, canvas.width - 56, canvas.height - 56);
+    context.strokeStyle = 'rgba(202,168,94,.42)';
+    context.lineWidth = 1;
+    context.strokeRect(42, 42, canvas.width - 84, canvas.height - 84);
+    context.fillStyle = '#caa85e';
+    context.font = '700 18px Arial';
+    context.letterSpacing = '4px';
+    context.fillText('VORTEX · CARTÃO DE CONQUISTAS', 78, 92);
+    context.fillStyle = '#f2e4bd';
+    context.font = '700 58px Georgia';
+    context.fillText(profile.displayName || 'Leitor Vortex', 78, 172);
+    context.fillStyle = 'rgba(242,228,189,.72)';
+    context.font = '24px Arial';
+    context.fillText('Minha jornada entre tomos e constelações', 82, 212);
+    context.fillStyle = '#caa85e';
+    context.font = '700 21px Arial';
+    context.fillText(`${unlockedMedals + unlockedStreakMedals} MEDALHAS DESBLOQUEADAS`, 82, 290);
+    context.fillStyle = '#f2e4bd';
+    context.font = '700 32px Georgia';
+    context.fillText(`${booksRead} livros lidos`, 82, 352);
+    context.fillText(`${hoursRead} horas de leitura`, 82, 410);
+    context.fillText(`${streak.currentStreak} dias de sequência`, 82, 468);
+    context.fillStyle = 'rgba(242,228,189,.66)';
+    context.font = '20px Arial';
+    context.fillText(`Melhor chama: ${streak.bestStreak} dias`, 82, 520);
+    context.fillStyle = 'rgba(202,168,94,.18)';
+    context.beginPath();
+    context.arc(982, 314, 148, 0, Math.PI * 2);
+    context.fill();
+    context.strokeStyle = 'rgba(202,168,94,.7)';
+    context.lineWidth = 3;
+    context.beginPath();
+    context.arc(982, 314, 112, 0, Math.PI * 2);
+    context.stroke();
+    context.fillStyle = '#caa85e';
+    context.font = '110px Georgia';
+    context.textAlign = 'center';
+    context.fillText('✦', 982, 350);
+    context.textAlign = 'left';
+    context.fillStyle = 'rgba(242,228,189,.55)';
+    context.font = '16px Arial';
+    context.fillText('biblioteca pessoal', 918, 510);
+    canvasToBlob(canvas).then(resolve).catch(reject);
+  });
+}
+
 export default function Profile() {
   const fileRef = useRef<HTMLInputElement>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
@@ -73,13 +142,21 @@ export default function Profile() {
   const books = storageService.getBooks();
   const [profile, setProfile] = useState<UserProfile>(() => storageService.getUserProfile());
   const [savedProfile, setSavedProfile] = useState<UserProfile>(() => storageService.getUserProfile());
+  const [streak, setStreak] = useState<ReadingStreak>(() => storageService.getReadingStreak());
   const [cropSource, setCropSource] = useState<string | null>(null);
   const [cropZoom, setCropZoom] = useState(1);
   const [cropPosition, setCropPosition] = useState<CropPosition>({ x: 0, y: 0 });
   const completed = books.filter(book => book.status === 'completed').length;
   const favoriteBook = getFavoriteBook(books, savedProfile.favoriteBook);
   const unlockedMedals = MEDAL_RULES.filter(rule => medalProgress(rule, completed, savedProfile.totalReadingHours).unlocked).length;
+  const unlockedStreakMedals = STREAK_MILESTONES.filter(rule => streakProgress(rule, streak.currentStreak, streak.bestStreak).unlocked).length;
   const nextMedal = MEDAL_RULES.find(rule => !medalProgress(rule, completed, savedProfile.totalReadingHours).unlocked);
+
+  useEffect(() => {
+    const refreshStreak = () => setStreak(storageService.getReadingStreak());
+    window.addEventListener('vortex-streak-updated', refreshStreak);
+    return () => window.removeEventListener('vortex-streak-updated', refreshStreak);
+  }, []);
 
   function update<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
     setProfile(current => ({ ...current, [key]: value }));
@@ -187,6 +264,49 @@ export default function Profile() {
     reader.readAsText(file);
   }
 
+  async function shareAchievements() {
+    const shareText = `${savedProfile.displayName || 'Leitor Vortex'} conquistou ${unlockedMedals + unlockedStreakMedals} medalhas na Vortex, com ${completed} livros lidos e uma sequência atual de ${streak.currentStreak} dias.`;
+    try {
+      const blob = await drawAchievementCard(savedProfile, completed, savedProfile.totalReadingHours, streak, unlockedMedals, unlockedStreakMedals);
+      const file = new File([blob], 'vortex-cartao-conquistas.png', { type: 'image/png' });
+      if (navigator.share) {
+        const canShareFile = !navigator.canShare || navigator.canShare({ files: [file] });
+        if (canShareFile) {
+          await navigator.share({ title: 'Meu cartão de conquistas Vortex', text: shareText, files: [file] });
+        } else {
+          await navigator.share({ title: 'Meu cartão de conquistas Vortex', text: shareText });
+        }
+        toast.success('Seu cartão foi preparado para compartilhar.');
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = file.name;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      try {
+        await navigator.clipboard.writeText(shareText);
+        toast.success('Cartão baixado e resumo copiado para a área de transferência.');
+      } catch {
+        toast.success('Cartão de conquistas baixado.');
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      toast.error(error instanceof Error ? error.message : 'Não foi possível preparar o cartão.');
+    }
+  }
+
+  async function copyAchievementText() {
+    const text = `${savedProfile.displayName || 'Leitor Vortex'} · ${unlockedMedals + unlockedStreakMedals} medalhas · ${completed} livros lidos · ${streak.currentStreak} dias de sequência.`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Resumo das conquistas copiado.');
+    } catch {
+      toast.error('O navegador não permitiu copiar o resumo.');
+    }
+  }
+
   return (
     <Layout>
       <div className="max-w-5xl space-y-7 animate-fade-in">
@@ -215,7 +335,9 @@ export default function Profile() {
           <div className="flex flex-wrap items-center justify-end gap-3"><Button type="submit" className="wand-click"><Save className="h-4 w-4 mr-2" /> Guardar perfil</Button></div>
         </form>
 
-        <Card className="vortex-card p-6 md:p-7"><div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Salão das medalhas</p><h2 className="mt-1 text-3xl font-serif">Marcos da sua jornada</h2><p className="mt-2 text-sm text-muted-foreground">Cada medalha é calculada pelos livros concluídos e pelas horas registradas.</p></div><div className="medal-counter"><Medal className="h-4 w-4" /> {unlockedMedals}/{MEDAL_RULES.length} desbloqueadas</div></div><div className="medal-grid">{MEDAL_RULES.map(rule => { const progress = medalProgress(rule, completed, savedProfile.totalReadingHours); const Icon = rule.icon; return <div key={rule.id} className={`medal-card ${progress.unlocked ? 'is-unlocked' : ''} tone-${rule.tone}`}><div className="medal-icon"><Icon className="h-6 w-6" /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><h3 className="font-serif text-xl leading-none">{rule.label}</h3><p className="mt-1 text-xs text-muted-foreground">{rule.description}</p></div>{progress.unlocked && <span className="medal-status">Conquistada</span>}</div><div className="medal-progress" aria-label={`${progress.current} de ${rule.target} ${rule.metric === 'books' ? 'livros' : 'horas'}`}><span style={{ width: `${progress.percentage}%` }} /></div><div className="mt-1 flex justify-between text-[.65rem] uppercase tracking-[.1em] text-muted-foreground"><span>{progress.current} {rule.metric === 'books' ? 'livros' : 'horas'}</span><span>{rule.target} {rule.metric === 'books' ? 'livros' : 'horas'}</span></div></div></div>; })}</div>{nextMedal && <div className="next-medal-note"><Sparkles className="h-4 w-4 text-[#caa85e]" /><span>Próximo marco: <strong>{nextMedal.label}</strong> — faltam {Math.max(0, nextMedal.target - (nextMedal.metric === 'books' ? completed : savedProfile.totalReadingHours))} {nextMedal.metric === 'books' ? 'livros' : 'horas'}.</span></div>}</Card>
+        <Card className="vortex-card p-6 md:p-7"><div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Salão das medalhas</p><h2 className="mt-1 text-3xl font-serif">Marcos da sua jornada</h2><p className="mt-2 text-sm text-muted-foreground">Cada medalha é calculada pelos livros concluídos, pelas horas registradas e pela constância da sua chama.</p></div><div className="medal-counter"><Medal className="h-4 w-4" /> {unlockedMedals + unlockedStreakMedals}/{MEDAL_RULES.length + STREAK_MILESTONES.length} desbloqueadas</div></div><div className="medal-grid">{MEDAL_RULES.map(rule => { const progress = medalProgress(rule, completed, savedProfile.totalReadingHours); const Icon = rule.icon; return <div key={rule.id} className={`medal-card ${progress.unlocked ? 'is-unlocked' : ''} tone-${rule.tone}`}><div className="medal-icon"><Icon className="h-6 w-6" /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><h3 className="font-serif text-xl leading-none">{rule.label}</h3><p className="mt-1 text-xs text-muted-foreground">{rule.description}</p></div>{progress.unlocked && <span className="medal-status">Conquistada</span>}</div><div className="medal-progress" aria-label={`${progress.current} de ${rule.target} ${rule.metric === 'books' ? 'livros' : 'horas'}`}><span style={{ width: `${progress.percentage}%` }} /></div><div className="mt-1 flex justify-between text-[.65rem] uppercase tracking-[.1em] text-muted-foreground"><span>{progress.current} {rule.metric === 'books' ? 'livros' : 'horas'}</span><span>{rule.target} {rule.metric === 'books' ? 'livros' : 'horas'}</span></div></div></div>; })}</div>{nextMedal && <div className="next-medal-note"><Sparkles className="h-4 w-4 text-[#caa85e]" /><span>Próximo marco: <strong>{nextMedal.label}</strong> — faltam {Math.max(0, nextMedal.target - (nextMedal.metric === 'books' ? completed : savedProfile.totalReadingHours))} {nextMedal.metric === 'books' ? 'livros' : 'horas'}.</span></div>}<div className="streak-medal-section"><div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Medalhas de constância</p><h3 className="mt-1 text-2xl font-serif">A chama da leitura</h3><p className="mt-1 text-sm text-muted-foreground">Sequência atual: {streak.currentStreak} dias · melhor marca: {streak.bestStreak} dias.</p></div><div className="streak-flame"><Flame className="h-4 w-4" /> {unlockedStreakMedals}/{STREAK_MILESTONES.length}</div></div><div className="medal-grid mt-4">{STREAK_MILESTONES.map(rule => { const progress = streakProgress(rule, streak.currentStreak, streak.bestStreak); return <div key={rule.id} className={`medal-card ${progress.unlocked ? 'is-unlocked' : ''} tone-${rule.tone}`}><div className="medal-icon streak-medal-symbol">{rule.icon}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><h4 className="font-serif text-xl leading-none">{rule.label}</h4><p className="mt-1 text-xs text-muted-foreground">{rule.description}</p></div>{progress.unlocked && <span className="medal-status">Conquistada</span>}</div><div className="medal-progress" aria-label={`${progress.best} de ${rule.days} dias`}><span style={{ width: `${progress.percentage}%` }} /></div><div className="mt-1 flex justify-between text-[.65rem] uppercase tracking-[.1em] text-muted-foreground"><span>Melhor: {progress.best}</span><span>Meta: {rule.days}</span></div></div></div>; })}</div></div></Card>
+
+        <Card className="vortex-card achievement-share-card p-6 md:p-7"><div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between"><div><p className="eyebrow">Cartão de conquistas</p><h2 className="mt-1 text-3xl font-serif">Leve sua jornada para além da biblioteca</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Gere uma imagem com seus marcos, medalhas e sequência para compartilhar nas redes sociais.</p></div><div className="achievement-share-mark"><Medal className="h-8 w-8" /><span>{unlockedMedals + unlockedStreakMedals}</span></div></div><div className="achievement-share-preview"><div><span className="share-preview-label">VORTEX · CONQUISTAS</span><strong>{savedProfile.displayName || 'Leitor Vortex'}</strong><p>{completed} livros · {savedProfile.totalReadingHours}h · {streak.currentStreak} dias de chama</p></div><div className="share-preview-glyph">✦</div></div><div className="flex flex-wrap gap-3"><Button type="button" className="wand-click" onClick={shareAchievements}><Share2 className="mr-2 h-4 w-4" /> Compartilhar cartão</Button><Button type="button" variant="outline" className="wand-click" onClick={copyAchievementText}><Copy className="mr-2 h-4 w-4" /> Copiar resumo</Button><p className="flex basis-full items-center gap-2 text-xs text-muted-foreground"><FileDown className="h-3.5 w-3.5" /> Em computadores sem compartilhamento nativo, o cartão PNG é baixado automaticamente.</p></div></Card>
 
         <Card className="vortex-card p-6 md:p-7"><div className="mb-5"><p className="eyebrow">Registro de memórias</p><h2 className="mt-1 text-3xl font-serif">Suas escolhas em destaque</h2></div><div className="grid gap-3 md:grid-cols-3"><div className="preference-card"><BookHeart className="h-5 w-5 text-primary" /><span>Leitura favorita</span><strong>{favoriteBook?.title || 'Ainda não definida'}</strong></div><div className="preference-card"><Sword className="h-5 w-5 text-[#caa85e]" /><span>Personagem favorito</span><strong>{savedProfile.favoriteCharacter || 'Ainda não definido'}</strong></div><div className="preference-card"><Skull className="h-5 w-5 text-rose-300" /><span>Vilão favorito</span><strong>{savedProfile.favoriteVillain || 'Ainda não definido'}</strong></div></div></Card>
 

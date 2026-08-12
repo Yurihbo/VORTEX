@@ -54,6 +54,7 @@ export interface ReadingStreak {
   currentStreak: number;
   bestStreak: number;
   lastReadDate?: string;
+  readingDates?: string[];
 }
 
 export interface LibraryStats {

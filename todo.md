@@ -1,9 +1,10 @@
-# Novas melhorias do perfil
+# Medalhas de sequência e compartilhamento
 
-- [x] Auditar os componentes de perfil, tipos, armazenamento e estilos relacionados.
-- [x] Criar editor de foto com recorte quadrado, zoom, arraste e pré-visualização.
-- [x] Salvar a foto ajustada no perfil apenas após confirmação do usuário.
-- [x] Criar medalhas por quantidade de livros concluídos e horas de leitura.
-- [x] Exibir progresso, estado desbloqueado e próximo marco no perfil.
-- [x] Validar acessibilidade, responsividade, TypeScript e build.
+- [x] Auditar os dados de leitura e os componentes atuais de conquistas.
+- [x] Implementar cálculo de dias consecutivos com datas reais de leitura.
+- [x] Adicionar medalhas especiais para sequências de 3, 7, 14, 30 e 100 dias.
+- [x] Exibir sequência atual, melhor sequência e progresso até o próximo marco.
+- [x] Criar cartão visual de conquistas com identidade VORTEX.
+- [x] Adicionar compartilhamento nativo e fallback de download/cópia.
+- [x] Validar acessibilidade visual, responsividade, TypeScript e build.
 - [ ] Criar checkpoint da atualização.

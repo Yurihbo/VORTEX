@@ -132,6 +132,39 @@ const DEFAULT_BOOKS: Book[] = [
   },
 ];
 
+function dateKey(value: string | Date): string {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
+}
+
+function dayDistance(from: string, to: string): number {
+  const fromTime = Date.parse(`${from}T00:00:00Z`);
+  const toTime = Date.parse(`${to}T00:00:00Z`);
+  return Math.round((toTime - fromTime) / 86400000);
+}
+
+function calculateReadingStreak(readingDates: string[]): ReadingStreak {
+  const dates = Array.from(new Set(readingDates.map(dateKey).filter(Boolean))).sort();
+  if (!dates.length) return { currentStreak: 0, bestStreak: 0, readingDates: [] };
+
+  let bestStreak = 1;
+  let run = 1;
+  for (let index = 1; index < dates.length; index += 1) {
+    run = dayDistance(dates[index - 1], dates[index]) === 1 ? run + 1 : 1;
+    bestStreak = Math.max(bestStreak, run);
+  }
+
+  const today = dateKey(new Date());
+  const lastDate = dates[dates.length - 1];
+  let currentStreak = dayDistance(lastDate, today) <= 1 ? 1 : 0;
+  for (let index = dates.length - 1; currentStreak > 0 && index > 0; index -= 1) {
+    if (dayDistance(dates[index - 1], dates[index]) !== 1) break;
+    currentStreak += 1;
+  }
+
+  return { currentStreak, bestStreak, lastReadDate: lastDate, readingDates: dates };
+}
+
 export const storageService = {
   // Profile
   getUserProfile(): UserProfile {
@@ -229,14 +262,32 @@ export const storageService = {
   getReadingStreak(): ReadingStreak {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.READING_STREAK);
-      return data ? JSON.parse(data) : { currentStreak: 0, bestStreak: 0 };
+      if (!data) return { currentStreak: 0, bestStreak: 0, readingDates: [] };
+      const stored = JSON.parse(data) as Partial<ReadingStreak>;
+      const readingDates = Array.isArray(stored.readingDates) ? stored.readingDates : [];
+      return readingDates.length
+        ? calculateReadingStreak(readingDates)
+        : { currentStreak: Number(stored.currentStreak) || 0, bestStreak: Number(stored.bestStreak) || 0, lastReadDate: stored.lastReadDate, readingDates: [] };
     } catch {
-      return { currentStreak: 0, bestStreak: 0 };
+      return { currentStreak: 0, bestStreak: 0, readingDates: [] };
     }
   },
 
   saveReadingStreak(streak: ReadingStreak): void {
-    localStorage.setItem(STORAGE_KEYS.READING_STREAK, JSON.stringify(streak));
+    const readingDates = Array.isArray(streak.readingDates) ? streak.readingDates : [];
+    const normalized = readingDates.length
+      ? calculateReadingStreak(readingDates)
+      : { ...streak, currentStreak: Math.max(0, Number(streak.currentStreak) || 0), bestStreak: Math.max(0, Number(streak.bestStreak) || 0), readingDates: [] };
+    localStorage.setItem(STORAGE_KEYS.READING_STREAK, JSON.stringify(normalized));
+  },
+
+  recordReadingDay(value: string | Date = new Date()): ReadingStreak {
+    const today = dateKey(value);
+    if (!today) return this.getReadingStreak();
+    const previous = this.getReadingStreak();
+    const next = calculateReadingStreak([...(previous.readingDates || []), today]);
+    this.saveReadingStreak(next);
+    return next;
   },
 
   // Library Stats

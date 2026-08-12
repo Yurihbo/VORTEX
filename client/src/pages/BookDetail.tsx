@@ -53,6 +53,10 @@ export default function BookDetail() {
     const nextPage = Math.max(0, Math.min(book!.pages, Number(pageInput) || 0));
     const nextStatus = nextPage >= book!.pages ? 'completed' : nextPage > 0 ? 'reading' : book!.status;
     saveBook({ currentPage: nextPage, status: nextStatus, completedDate: nextStatus === 'completed' ? new Date().toISOString() : book!.completedDate }, nextStatus === 'completed' ? 'Jornada concluída.' : 'Progresso atualizado.');
+    if (nextPage > book!.currentPage || nextStatus === 'completed') {
+      storageService.recordReadingDay();
+      window.dispatchEvent(new Event('vortex-streak-updated'));
+    }
   }
 
   function addNote(event: FormEvent) {

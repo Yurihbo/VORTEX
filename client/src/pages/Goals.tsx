@@ -29,10 +29,12 @@ export default function Goals() {
   }
 
   function updateStreak() {
-    const next = { ...streak, currentStreak: streak.currentStreak + 1, bestStreak: Math.max(streak.bestStreak, streak.currentStreak + 1), lastReadDate: new Date().toISOString() };
+    const today = new Date().toISOString().slice(0, 10);
+    const alreadyRecorded = streak.lastReadDate?.slice(0, 10) === today;
+    const next = storageService.recordReadingDay();
     setStreak(next);
-    storageService.saveReadingStreak(next);
-    toast.success('A chama da leitura foi reacendida.');
+    window.dispatchEvent(new Event('vortex-streak-updated'));
+    toast.success(alreadyRecorded ? 'A leitura de hoje já está registrada.' : `A chama foi reacendida por ${next.currentStreak} dia${next.currentStreak === 1 ? '' : 's'}.`);
   }
 
   return (

@@ -638,3 +638,24 @@
 @media (prefers-reduced-motion: reduce) {
   .medal-card, .medal-progress span, .crop-stage img { transition: none; }
 }
+
+@layer components {
+  .streak-medal-section { border-top: 1px solid rgba(202,168,94,.18); margin-top: 1.5rem; padding-top: 1.5rem; }
+  .streak-flame { align-items: center; background: rgba(202,168,94,.1); border: 1px solid rgba(202,168,94,.3); color: var(--gold); display: inline-flex; font-size: .68rem; gap: .4rem; letter-spacing: .1em; padding: .42rem .62rem; text-transform: uppercase; }
+  .streak-medal-symbol { font-family: Georgia, serif; font-size: 1.6rem; }
+  .achievement-share-card { background: radial-gradient(circle at 90% 0%, rgba(202,168,94,.13), transparent 34%), linear-gradient(145deg, rgba(18,31,57,.92), rgba(7,13,26,.8)); }
+  .achievement-share-mark { align-items: center; background: rgba(202,168,94,.1); border: 1px solid rgba(202,168,94,.45); color: var(--gold); display: flex; flex: 0 0 auto; flex-direction: column; gap: .1rem; justify-content: center; min-height: 5.5rem; min-width: 5.5rem; }
+  .achievement-share-mark span { font-family: Georgia, serif; font-size: 1.8rem; line-height: 1; }
+  .achievement-share-preview { align-items: center; background: linear-gradient(120deg, rgba(12,22,42,.95), rgba(35,55,88,.68)); border: 1px solid rgba(202,168,94,.38); box-shadow: inset 0 0 0 1px rgba(255,255,255,.03); display: flex; justify-content: space-between; margin: 1.25rem 0; min-height: 9.5rem; overflow: hidden; padding: 1.5rem 1.75rem; position: relative; }
+  .achievement-share-preview::before { border: 1px solid rgba(202,168,94,.34); content: ''; inset: 10px; pointer-events: none; position: absolute; }
+  .achievement-share-preview > div:first-child { position: relative; z-index: 1; }
+  .share-preview-label { color: var(--gold); display: block; font-size: .62rem; letter-spacing: .18em; margin-bottom: .65rem; text-transform: uppercase; }
+  .achievement-share-preview strong { color: #f2e4bd; display: block; font-family: Georgia, serif; font-size: clamp(1.55rem, 4vw, 2.3rem); }
+  .achievement-share-preview p { color: rgba(242,228,189,.72); font-size: .78rem; margin-top: .45rem; }
+  .share-preview-glyph { color: rgba(202,168,94,.35); font-family: Georgia, serif; font-size: 7rem; line-height: 1; padding-right: 1.4rem; }
+}
+
+@media (max-width: 640px) {
+  .achievement-share-preview { align-items: flex-start; flex-direction: column; gap: .5rem; min-height: 12rem; padding: 1.25rem; }
+  .share-preview-glyph { align-self: flex-end; font-size: 4.5rem; margin-top: -3.5rem; padding-right: 0; }
+}
