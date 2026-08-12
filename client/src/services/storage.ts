@@ -137,7 +137,19 @@ export const storageService = {
   getUserProfile(): UserProfile {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
-      return data ? { ...DEFAULT_PROFILE, ...JSON.parse(data) } : DEFAULT_PROFILE;
+      if (!data) return DEFAULT_PROFILE;
+      const stored = JSON.parse(data) as Partial<UserProfile>;
+      return {
+        ...DEFAULT_PROFILE,
+        ...stored,
+        displayName: typeof stored.displayName === 'string' ? stored.displayName : DEFAULT_PROFILE.displayName,
+        bio: typeof stored.bio === 'string' ? stored.bio : DEFAULT_PROFILE.bio,
+        totalReadingHours: Number(stored.totalReadingHours) || 0,
+        favoriteBook: typeof stored.favoriteBook === 'string' ? stored.favoriteBook : '',
+        favoriteCharacter: typeof stored.favoriteCharacter === 'string' ? stored.favoriteCharacter : '',
+        favoriteVillain: typeof stored.favoriteVillain === 'string' ? stored.favoriteVillain : '',
+      };
+
     } catch {
       return DEFAULT_PROFILE;
     }

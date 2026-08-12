@@ -1,10 +1,9 @@
-# Última melhoria do VORTEX
+# Novas melhorias do perfil
 
-- [x] Auditar o modelo de perfil, o armazenamento local e o layout global.
-- [x] Adicionar foto de perfil com upload, compressão e pré-visualização.
-- [x] Persistir nome, biografia e preferências literárias do usuário.
-- [x] Exibir horas lidas, leitura favorita, livros concluídos, personagem favorito e vilão favorito.
-- [x] Adicionar mini-ícone de perfil com avatar no canto superior esquerdo de todas as abas.
-- [x] Implementar efeito visual leve de varinha nas interações, respeitando redução de movimento.
-- [x] Validar responsividade, TypeScript e build de produção.
-- [ ] Criar checkpoint final desta melhoria.
+- [x] Auditar os componentes de perfil, tipos, armazenamento e estilos relacionados.
+- [x] Criar editor de foto com recorte quadrado, zoom, arraste e pré-visualização.
+- [x] Salvar a foto ajustada no perfil apenas após confirmação do usuário.
+- [x] Criar medalhas por quantidade de livros concluídos e horas de leitura.
+- [x] Exibir progresso, estado desbloqueado e próximo marco no perfil.
+- [x] Validar acessibilidade, responsividade, TypeScript e build.
+- [ ] Criar checkpoint da atualização.
