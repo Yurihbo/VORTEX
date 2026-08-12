@@ -35,10 +35,9 @@ jobs:
         run: pnpm install
 
       - name: Build project (GitHub Pages base)
-        run: |
-          # Define o base URL dinamicamente com base no nome do repositório
-          export VITE_BASE_URL="/VORTEX/"
-          pnpm build
+        run: pnpm build
+        env:
+          VITE_BASE_URL: "/VORTEX/"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
