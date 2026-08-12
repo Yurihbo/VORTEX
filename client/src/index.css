@@ -731,3 +731,22 @@
   .grimoire-of-day-card .book-cover { max-width: 100%; }
   .grimoire-of-day-card h3, .grimoire-of-day-card p { overflow-wrap: anywhere; }
 }
+
+@layer components {
+  /* No modo claro, o azul profundo dos cartões recebe tipografia dourada para manter contraste e continuidade com o wordmark VORTEX. */
+  :not(.dark) .vortex-card { color: #e4cc86; }
+  :not(.dark) .vortex-card h1,
+  :not(.dark) .vortex-card h2,
+  :not(.dark) .vortex-card h3,
+  :not(.dark) .vortex-card h4,
+  :not(.dark) .vortex-card .font-serif,
+  :not(.dark) .vortex-card .text-3xl,
+  :not(.dark) .vortex-card .text-4xl,
+  :not(.dark) .vortex-card .text-5xl { color: #f2df9e; }
+  :not(.dark) .vortex-card .text-muted-foreground,
+  :not(.dark) .vortex-card [class*='text-xs'],
+  :not(.dark) .vortex-card [class*='text-sm'],
+  :not(.dark) .vortex-card [class*='text-lg'] { color: rgba(228,204,134,.82); }
+  :not(.dark) .vortex-card a:not(.vortex-button-primary),
+  :not(.dark) .vortex-card button { color: #f2df9e; }
+}
