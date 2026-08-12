@@ -1,7 +1,9 @@
-# Correção dos seletores de status
+# Refinamento visual de selects, metas, perfil e tema
 
-- [x] Auditar os seletores e estilos de status da Biblioteca e Leitura.
-- [x] Aplicar fundos, bordas e textos contrastantes aos estados dos seletores.
-- [x] Garantir legibilidade para “Em leitura”, “Quero ler”, “Concluídos” e demais estados.
-- [x] Validar os seletores nos temas claro e escuro, além do TypeScript e build.
+- [ ] Auditar selects, métricas, metas e controle de tema.
+- [ ] Aplicar azul profundo e tipografia dourada aos selects de Adicionar tomo, Biblioteca e Em leitura no modo claro.
+- [ ] Reforçar a legibilidade de “Melhor dia” e “Próximo marco” em Metas.
+- [ ] Estilizar e enquadrar as métricas do Perfil nos modos claro e escuro.
+- [ ] Destacar o botão de modo claro/escuro da sidebar em dourado.
+- [ ] Validar os dois temas, responsividade, TypeScript e build.
 - [ ] Criar checkpoint da correção.

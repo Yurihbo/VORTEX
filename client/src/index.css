@@ -814,3 +814,98 @@
     border-color: #b8944d;
   }
 }
+
+
+@layer components {
+  /* Refinamento de leitura: controles e métricas devem preservar o contraste cerimonial nos dois temas. */
+  .vortex-select {
+    appearance: none;
+    background: linear-gradient(145deg, #17345d, #0b1328) !important;
+    border-color: rgba(202,168,94,.72) !important;
+    color: #f2df9e !important;
+    font-weight: 700;
+    min-width: 9.5rem;
+  }
+
+  .vortex-select:hover,
+  .vortex-select:focus-visible {
+    background: linear-gradient(145deg, #244b7d, #111e3b) !important;
+    border-color: #f2d587 !important;
+    box-shadow: 0 0 0 2px rgba(202,168,94,.2), 0 8px 18px rgba(18,42,82,.2);
+    color: #fff2bd !important;
+    outline: none;
+  }
+
+  .vortex-select option {
+    background: #0b1328;
+    color: #f2df9e;
+  }
+
+  .goal-streak-stat {
+    background: linear-gradient(145deg, rgba(22,48,86,.96), rgba(10,20,42,.98));
+    border: 1px solid rgba(202,168,94,.52);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.025), inset 0 -10px 22px rgba(5,10,21,.24);
+    min-height: 5.5rem;
+    padding: 1rem;
+    position: relative;
+  }
+
+  .goal-streak-stat::after {
+    color: rgba(202,168,94,.58);
+    content: '✦';
+    font-family: Georgia, serif;
+    font-size: .8rem;
+    position: absolute;
+    right: .65rem;
+    top: .55rem;
+  }
+
+  .goal-stat-label {
+    color: #f2df9e;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .goal-stat-value {
+    color: #fff2bd;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-top: .55rem;
+  }
+
+  .profile-stat {
+    background: linear-gradient(145deg, rgba(22,48,86,.98), rgba(10,20,42,.98));
+    border: 1px solid rgba(202,168,94,.58);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.025), inset 0 -12px 24px rgba(5,10,21,.25), 0 8px 18px rgba(5,10,21,.14);
+    min-height: 7.2rem;
+    padding: 1.1rem;
+  }
+
+  .profile-stat > svg { color: #f2d587; filter: drop-shadow(0 0 6px rgba(202,168,94,.24)); }
+  .profile-stat strong { color: #fff2bd; font-size: clamp(2rem, 4vw, 2.55rem); text-shadow: 0 2px 14px rgba(0,0,0,.26); }
+  .profile-stat span { color: #e4cc86; font-size: .7rem; font-weight: 800; letter-spacing: .1em; }
+
+  .theme-toggle-button {
+    background: linear-gradient(145deg, rgba(202,168,94,.18), rgba(138,106,47,.1)) !important;
+    border-color: rgba(202,168,94,.62) !important;
+    color: #caa85e !important;
+    font-weight: 800;
+  }
+
+  .theme-toggle-button:hover {
+    background: linear-gradient(145deg, rgba(202,168,94,.3), rgba(65,103,167,.18)) !important;
+    border-color: #f2d587 !important;
+    color: #f2d587 !important;
+  }
+
+  :not(.dark) .theme-toggle-button { color: #8a6a2f !important; }
+  :not(.dark) .theme-toggle-button:hover { color: #6c4f1c !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vortex-select, .theme-toggle-button { transition: none; }
+}

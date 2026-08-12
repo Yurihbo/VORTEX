@@ -101,7 +101,7 @@ export default function BookDetail() {
               <p className="mt-6 max-w-2xl leading-7 text-muted-foreground">{book.description}</p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Button onClick={() => saveBook({ isFavorite: !book.isFavorite }, book.isFavorite ? 'Relíquia removida.' : 'Relíquia favoritada.')} variant={book.isFavorite ? 'default' : 'outline'}><Heart className={`h-4 w-4 mr-2 ${book.isFavorite ? 'fill-current' : ''}`} /> {book.isFavorite ? 'Favorito' : 'Favoritar'}</Button>
-                <select value={book.status} onChange={event => saveBook({ status: event.target.value as BookStatus }, 'Status alterado.')} className="h-10 rounded-md border border-input bg-background px-3 text-sm"><option value="want-to-read">Quero ler</option><option value="reading">Em leitura</option><option value="paused">Pausado</option><option value="completed">Concluído</option></select>
+                <select value={book.status} onChange={event => saveBook({ status: event.target.value as BookStatus }, 'Status alterado.')} className="vortex-select h-10 rounded-md border border-input bg-background px-3 text-sm"><option value="want-to-read">Quero ler</option><option value="reading">Em leitura</option><option value="paused">Pausado</option><option value="completed">Concluído</option></select>
               </div>
               <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 border-t border-border/60 pt-5">
                 <div><p className="text-xs uppercase tracking-widest text-muted-foreground">Páginas</p><p className="mt-1 font-semibold">{book.pages}</p></div>
