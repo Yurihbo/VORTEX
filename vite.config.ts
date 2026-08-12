@@ -21,5 +21,6 @@ export default defineConfig({
     port: 3000,
     strictPort: false,
     host: true,
+    allowedHosts: ['3000-ivsdtdscpdy97nigdky3s-b68c7a50.us2.manus.computer'],
   },
 });

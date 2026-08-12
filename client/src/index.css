@@ -53,11 +53,11 @@
   --chart-4: oklch(0.55 0.12 45);
   --chart-5: oklch(0.65 0.15 65);
   --radius: 0.5rem;
-  --background: oklch(0.96 0.005 65);
+  --background: oklch(0.92 0.012 65);
   --foreground: oklch(0.20 0.02 65);
-  --card: oklch(0.92 0.008 80);
+  --card: oklch(0.95 0.008 80);
   --card-foreground: oklch(0.20 0.02 65);
-  --popover: oklch(0.92 0.008 80);
+  --popover: oklch(0.95 0.008 80);
   --popover-foreground: oklch(0.20 0.02 65);
   --secondary: oklch(0.70 0.12 65);
   --secondary-foreground: oklch(0.20 0.02 65);
@@ -711,4 +711,23 @@
   .header-add-button, .vortex-shell button.bg-primary { background: radial-gradient(circle at 28% 12%, rgba(130,177,226,.48), transparent 34%), linear-gradient(145deg, #416da7, #19345d 74%); border: 1px solid rgba(242,213,135,.78); box-shadow: inset 0 1px 0 rgba(255,255,255,.2), inset 0 -9px 20px rgba(8,20,45,.28), 0 0 0 1px rgba(65,103,167,.32), 0 8px 22px rgba(18,42,82,.3); color: #f4ead1; }
   .header-add-button:hover, .vortex-shell button.bg-primary:hover { filter: brightness(1.1) saturate(1.08); }
   .vortex-card > .flex > .eyebrow, .vortex-card > div > .eyebrow { text-shadow: 0 0 12px rgba(202,168,94,.12); }
+}
+
+@layer components {
+  /* Contraste solicitado: ícones e textos da navegação lateral ganham o Azul Arcano, sem alterar o tema escuro. */
+  :not(.dark) .vortex-sidebar .nav-link,
+  :not(.dark) .vortex-sidebar .nav-link svg,
+  :not(.dark) .vortex-sidebar .vortex-credit,
+  :not(.dark) .vortex-sidebar .vortex-credit span { color: #416da7; }
+  :not(.dark) .vortex-sidebar .nav-link:hover,
+  :not(.dark) .vortex-sidebar .nav-link[data-active='true'] { color: #244b7d; }
+  :not(.dark) .vortex-sidebar .nav-link[data-active='true'] { background: rgba(65,109,167,.13); border-left-color: #416da7; box-shadow: inset 0 0 16px rgba(65,109,167,.08); }
+  :not(.dark) .vortex-sidebar .nav-link[data-active='true']::after { color: #416da7; }
+  :not(.dark) .vortex-sidebar .vortex-credit { border-color: rgba(65,109,167,.24); }
+  :not(.dark) .vortex-sidebar .eyebrow,
+  :not(.dark) .vortex-sidebar nav::before { color: #416da7; }
+  :not(.dark) .vortex-sidebar .border-border\/60 { border-color: rgba(65,109,167,.22); }
+  .grimoire-of-day-card { overflow: hidden; }
+  .grimoire-of-day-card .book-cover { max-width: 100%; }
+  .grimoire-of-day-card h3, .grimoire-of-day-card p { overflow-wrap: anywhere; }
 }
