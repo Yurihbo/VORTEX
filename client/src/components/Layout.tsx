@@ -77,7 +77,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="p-4 border-t border-border/60 space-y-3">
             {isOnline ? <div className="flex items-center gap-2 px-3 text-xs text-muted-foreground"><Sparkles className="h-3.5 w-3.5 text-[#caa85e]" /> Outra história espera por você.</div> : <div className="offline-badge"><WifiOff className="h-3.5 w-3.5" /> Modo offline ativo</div>}
             {!isStandalone && <Button variant="outline" size="sm" onClick={installApp} className="w-full justify-start gap-2 border-[#caa85e]/35 text-[#caa85e]"><Download className="w-4 h-4" /> Instalar Vortex</Button>}
-            {isStandalone && <div className="installed-badge"><Download className="h-3.5 w-3.5" /> Vortex instalada</div>}
+            {isStandalone && <div className="installed-badge"><Download className="h-3.5 w-3.5" /> Vortex instalada</div>}<p className="vortex-credit">Yurihbo <span>— Autor</span></p>
             <Button variant="outline" size="sm" onClick={toggleTheme} className="w-full justify-start gap-2">{theme === 'dark' ? <><Sun className="w-4 h-4" /> Modo claro</> : <><Moon className="w-4 h-4" /> Modo escuro</>}</Button>
           </div>
         </div>

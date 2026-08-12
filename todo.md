@@ -1,8 +1,8 @@
-# Tarefas PWA do VORTEX
+# Ajustes antes do envio ao GitHub
 
-- [x] Auditar manifesto, ícone e registro do service worker.
-- [x] Adicionar prompt de instalação quando o navegador disponibilizar o evento beforeinstallprompt.
-- [x] Exibir estado de instalação/offline de forma acessível e coerente com o tema VORTEX.
-- [x] Melhorar a estratégia de cache para navegação offline sem interferir em assets atualizados.
-- [x] Validar TypeScript, build de produção e comportamento responsivo.
-- [ ] Criar checkpoint final da versão PWA.
+- [x] Remover referências internas a IA, Manus, geração e instruções de desenvolvimento do código e da documentação pública.
+- [x] Implementar seleção de imagem local para capa ao criar um tomo.
+- [x] Exibir pré-visualização da capa escolhida e manter a imagem no registro local do livro.
+- [x] Adicionar “Yurihbo — Autor” fixo no canto inferior esquerdo.
+- [x] Validar o fluxo visual, o TypeScript e o build de produção.
+- [ ] Aguardar a URL do repositório GitHub antes de executar o envio.

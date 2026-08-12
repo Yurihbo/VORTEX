@@ -14,7 +14,7 @@
   "categories": ["books", "education", "lifestyle"],
   "prefer_related_applications": false,
   "icons": [
-    { "src": "/manus-storage/vortex-logo_360d1f60.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/assets/vortex-logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
     { "src": "/vortex-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }

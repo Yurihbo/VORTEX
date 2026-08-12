@@ -7,8 +7,8 @@ interface BookCoverProps {
 }
 
 const coverByTitle: Record<string, string> = {
-  'Duna': '/manus-storage/vortex-cover-dune_43d587d2.jpg',
-  'O Hobbit': '/manus-storage/vortex-cover-hobbit_8f356b26.jpg',
+  'Duna': '/assets/vortex-cover-dune.jpg',
+  'O Hobbit': '/assets/vortex-cover-hobbit.jpg',
 };
 
 const fallbackCovers = [

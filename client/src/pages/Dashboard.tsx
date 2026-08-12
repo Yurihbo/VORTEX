@@ -28,7 +28,7 @@ export default function Dashboard() {
     <Layout>
       <div className="space-y-9 animate-fade-in">
         <section className="vortex-hero relative min-h-[280px] overflow-hidden rounded-2xl border border-[#caa85e]/30 bg-[#12182c]">
-          <img src="/manus-storage/vortex-library-hero_18b8da6f.jpg" alt="Biblioteca ancestral iluminada por luas e velas" className="absolute inset-0 h-full w-full object-cover opacity-55" />
+          <img src="/assets/vortex-library-hero.jpg" alt="Biblioteca ancestral iluminada por luas e velas" className="absolute inset-0 h-full w-full object-cover opacity-55" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#111528] via-[#111528]/85 to-transparent" />
           <div className="relative max-w-2xl p-7 md:p-10 lg:p-12">
             <div className="mb-4 flex items-center gap-2 text-[#caa85e]"><span className="h-px w-8 bg-current" /><span className="eyebrow">Portal de leitura</span></div>
