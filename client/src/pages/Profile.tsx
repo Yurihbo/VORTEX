@@ -393,8 +393,8 @@ export default function Profile() {
           <Card className="vortex-card profile-hero-card p-6 md:p-9">
             <div className="flex flex-col gap-7 md:flex-row md:items-center">
               <div className="relative mx-auto md:mx-0">
-                <div className="profile-avatar-frame">
-                  {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`Foto de perfil de ${profile.displayName || 'Leitor Vortex'}`} /> : <UserRound className="h-14 w-14 text-[#caa85e]" />}
+                <div className="profile-avatar-frame flex items-center justify-center bg-muted/40">
+                  {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`Foto de perfil de ${profile.displayName || 'Leitor Vortex'}`} className="w-full h-full object-cover" /> : <UserRound className="h-16 w-16 text-[#caa85e]" />}
                 </div>
                 <button type="button" aria-label="Escolher foto de perfil" className="profile-avatar-trigger wand-click" onClick={openAvatarPicker}><Camera className="h-4 w-4" /></button>
                 <input ref={avatarRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={handleAvatarUpload} />

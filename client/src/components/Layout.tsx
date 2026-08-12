@@ -104,8 +104,8 @@ export function Layout({ children }: LayoutProps) {
         <header className="vortex-header bg-background/90 backdrop-blur-md border-b border-border/60 px-4 py-3 md:px-8 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <button aria-label="Abrir menu" onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 -ml-2 hover:bg-primary/10 rounded-lg transition-colors">{sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}</button>
-            <Link href="/profile" aria-label="Abrir perfil" className="flex items-center gap-2.5 profile-mini-link wand-click px-2 py-1 rounded-full border border-[#caa85e]/30 hover:border-[#caa85e] transition-colors">
-              <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center bg-muted">
+            <Link href="/profile" aria-label="Abrir perfil" className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full border border-[#caa85e]/40 bg-card/80 hover:border-[#caa85e] transition-colors wand-click">
+              <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center bg-muted shrink-0">
                 {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.displayName} className="w-full h-full object-cover" /> : <UserRound className="h-4 w-4 text-[#caa85e]" />}
               </div>
               <span className="text-xs font-serif font-medium text-foreground max-w-[120px] truncate">{profile.displayName || 'Leitor'}</span>
