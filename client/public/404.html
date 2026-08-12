@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>VORTEX — Biblioteca Virtual</title>
+    <script type="text/javascript">
+      // Redirecionamento para suportar o roteamento de SPA no GitHub Pages
+      var pathSegmentsToKeep = 1; // Ajuste se seu repositório estiver em subpasta (ex: /VORTEX/ -> 1)
+      var l = window.location;
+      var repoName = l.pathname.split('/')[1];
+      var base = repoName ? '/' + repoName + '/' : '/';
+      var redirectPath = l.pathname.slice(base.length - 1) + l.search + l.hash;
+      window.location.replace(l.protocol + '//' + l.host + base + '?p=' + encodeURIComponent(redirectPath));
+    </script>
+  </head>
+  <body></body>
+</html>

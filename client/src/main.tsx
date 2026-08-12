@@ -5,10 +5,19 @@ import "./index.css";
 
 document.documentElement.lang = "pt-BR";
 
+// Suporte a SPA no GitHub Pages (redirecionamento via 404.html)
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const p = params.get('p');
+  if (p) {
+    window.history.replaceState(null, '', p);
+  }
+})();
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />
-  </StrictMode>,
+  </StrictMode>
 );
 
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
