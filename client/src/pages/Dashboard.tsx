@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BookOpen, Flame, Heart, LibraryBig, Sparkles, Trophy } from 'lucide-react';
 import { Link } from 'wouter';
 import { Layout } from '@/components/Layout';
@@ -8,11 +8,14 @@ import { BookCover } from '@/components/BookCover';
 import { storageService } from '@/services/storage';
 import { Book, LibraryStats } from '@/types/book';
 
+const base = import.meta.env.BASE_URL || '/';
+
 export default function Dashboard() {
   const [books, setBooks] = useState<Book[]>([]);
   const [stats, setStats] = useState<LibraryStats | null>(null);
   const [bookOfDay, setBookOfDay] = useState<Book | null>(null);
   const [readingBooks, setReadingBooks] = useState<Book[]>([]);
+  const profile = storageService.getUserProfile();
 
   useEffect(() => {
     const allBooks = storageService.getBooks();
@@ -28,7 +31,7 @@ export default function Dashboard() {
     <Layout>
       <div className="space-y-9 animate-fade-in">
         <section className="vortex-hero relative min-h-[280px] overflow-hidden rounded-2xl border border-[#caa85e]/30 bg-[#12182c]">
-          <img src="/assets/vortex-library-hero.jpg" alt="Biblioteca ancestral iluminada por luas e velas" className="absolute inset-0 h-full w-full object-cover opacity-55" />
+          <img src={`${base}assets/vortex-library-hero.jpg`} alt="Biblioteca ancestral iluminada por luas e velas" className="absolute inset-0 h-full w-full object-cover opacity-55" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#111528] via-[#111528]/85 to-transparent" />
           <div className="relative max-w-2xl p-7 md:p-10 lg:p-12">
             <div className="mb-4 flex items-center gap-2 text-[#caa85e]"><span className="h-px w-8 bg-current" /><span className="eyebrow">Portal de leitura</span></div>
@@ -39,11 +42,82 @@ export default function Dashboard() {
           <div className="absolute bottom-6 right-7 hidden md:flex items-center gap-2 text-xs text-[#d6d0c5]/70"><Sparkles className="h-4 w-4 text-[#caa85e]" /> Outra história espera por você.</div>
         </section>
 
-        <section><div className="mb-5 flex items-end justify-between gap-4"><div><p className="eyebrow">Panorama da coleção</p><h2 className="mt-1 text-4xl font-serif">Seu reino de histórias</h2></div><Link href="/stats" className="hidden sm:inline-flex text-sm text-primary hover:text-[#caa85e]">Ver crônicas →</Link></div><div className="grid grid-cols-2 xl:grid-cols-5 gap-3"><Card className="vortex-card p-5"><LibraryBig className="h-5 w-5 text-primary" /><p className="mt-4 text-3xl font-serif">{stats?.totalBooks || 0}</p><p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">Livros</p></Card><Card className="vortex-card p-5"><Flame className="h-5 w-5 text-[#caa85e]" /><p className="mt-4 text-3xl font-serif">{readingBooks.length}</p><p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">Em jornada</p></Card><Card className="vortex-card p-5"><Trophy className="h-5 w-5 text-[#caa85e]" /><p className="mt-4 text-3xl font-serif">{stats?.booksRead || 0}</p><p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">Concluídos</p></Card><Card className="vortex-card p-5"><Heart className="h-5 w-5 text-rose-300 fill-current" /><p className="mt-4 text-3xl font-serif">{favoriteCount}</p><p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">Favoritos</p></Card><Card className="vortex-card p-5 col-span-2 xl:col-span-1"><BookOpen className="h-5 w-5 text-primary" /><p className="mt-4 text-3xl font-serif">{stats?.pagesRead || 0}</p><p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">Páginas lidas</p></Card></div></section>
+        {/* Métricas e Estatísticas rápidas */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="p-5 border-[#caa85e]/30 bg-card/90 shadow-lg relative overflow-hidden">
+            <div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-wider text-[#caa85e]">Coleção</span><LibraryBig className="h-5 w-5 text-[#caa85e]" /></div>
+            <p className="mt-3 text-3xl font-serif text-foreground">{stats?.totalBooks || 0}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Tomos catalogados</p>
+          </Card>
+          <Card className="p-5 border-[#caa85e]/30 bg-card/90 shadow-lg relative overflow-hidden">
+            <div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-wider text-[#caa85e]">Lidos</span><Trophy className="h-5 w-5 text-[#caa85e]" /></div>
+            <p className="mt-3 text-3xl font-serif text-foreground">{stats?.booksRead || 0}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Jornadas concluídas</p>
+          </Card>
+          <Card className="p-5 border-[#caa85e]/30 bg-card/90 shadow-lg relative overflow-hidden">
+            <div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-wider text-[#caa85e]">Tempo</span><BookOpen className="h-5 w-5 text-[#caa85e]" /></div>
+            <p className="mt-3 text-3xl font-serif text-foreground">{profile.totalReadingHours || 0}h</p>
+            <p className="mt-1 text-xs text-muted-foreground">Horas de imersão</p>
+          </Card>
+          <Card className="p-5 border-[#caa85e]/30 bg-card/90 shadow-lg relative overflow-hidden">
+            <div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-wider text-[#caa85e]">Favoritos</span><Heart className="h-5 w-5 text-[#caa85e]" /></div>
+            <p className="mt-3 text-3xl font-serif text-foreground">{favoriteCount}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Tomos consagrados</p>
+          </Card>
+        </div>
 
-        {readingBooks.length > 0 && <section><div className="mb-5"><p className="eyebrow">Onde você parou</p><h2 className="mt-1 text-4xl font-serif">Continue sua jornada</h2></div><div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{readingBooks.slice(0, 3).map(book => <Link key={book.id} href={`/book/${book.id}`} className="block group"><Card className="vortex-card p-5 flex gap-4 transition-all hover:-translate-y-1 hover:border-primary/40"><BookCover book={book} size="md" /><div className="min-w-0 flex-1 flex flex-col"><p className="eyebrow">Em leitura</p><h3 className="mt-1 font-serif text-2xl leading-tight line-clamp-2 group-hover:text-primary transition-colors">{book.title}</h3><p className="mt-1 text-sm text-muted-foreground">{book.author}</p><div className="mt-auto pt-5"><div className="flex justify-between text-xs text-muted-foreground"><span>Página {book.currentPage}</span><span>{Math.round((book.currentPage / book.pages) * 100)}%</span></div><div className="mt-2 h-2 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-primary to-[#caa85e]" style={{ width: `${(book.currentPage / book.pages) * 100}%` }} /></div></div></div></Card></Link>)}</div></section>}
+        {/* Grimório do Dia & Em Leitura */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Card className="p-6 md:p-7 border-[#caa85e]/40 bg-card/95 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none"><Sparkles className="h-28 w-28 text-[#caa85e]" /></div>
+              <div className="flex items-center justify-between mb-4"><span className="text-xs font-semibold uppercase tracking-widest text-[#caa85e]">Sugestão Mística</span><span className="text-xs text-muted-foreground font-serif">Grimório do Dia</span></div>
+              {bookOfDay ? (
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                  <div className="flex-shrink-0"><BookCover book={bookOfDay} size="md" /></div>
+                  <div className="space-y-3 text-center sm:text-left flex-1">
+                    <h3 className="text-2xl font-serif text-foreground">{bookOfDay.title}</h3>
+                    <p className="text-sm text-muted-foreground">Por {bookOfDay.author} • <span className="text-[#caa85e]">{bookOfDay.genre}</span></p>
+                    <p className="text-sm text-foreground/80 leading-relaxed line-clamp-3">{bookOfDay.description || 'Um tomo fascinante que aguarda nas estantes da biblioteca por um leitor corajoso.'}</p>
+                    <div className="pt-2 flex flex-wrap gap-2 justify-center sm:justify-start">
+                      <Link href={`/book/${bookOfDay.id}`}><Button size="sm" className="vortex-button-primary">Abrir Tomo</Button></Link>
+                      <Link href="/library"><Button size="sm" variant="outline" className="border-[#caa85e]/40 text-foreground hover:bg-[#caa85e]/10">Ver Estantes</Button></Link>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">Nenhum tomo encontrado na biblioteca. Adicione sua primeira obra.</p>
+              )}
+            </Card>
+          </div>
 
-        {bookOfDay && <section><div className="mb-5"><p className="eyebrow">Uma sugestão para hoje</p><h2 className="mt-1 text-4xl font-serif">✦ Grimório do Dia</h2></div><Card className="vortex-card grimoire-of-day-card p-6 md:p-8"><div className="grid gap-7 md:grid-cols-[180px_minmax(0,1fr)] items-center"><div className="flex justify-center md:justify-start"><BookCover book={bookOfDay} size="lg" className="mx-auto md:mx-0" /></div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[.18em] text-[#caa85e]"><span>{bookOfDay.genre}</span><span className="text-muted-foreground">·</span><span>{bookOfDay.pages} páginas</span></div><h3 className="mt-3 text-4xl font-serif">{bookOfDay.title}</h3><p className="mt-1 text-muted-foreground">{bookOfDay.author}</p><p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">{bookOfDay.description}</p><Link href={`/book/${bookOfDay.id}`} className="mt-6 inline-flex"><Button>Explorar livro</Button></Link></div></div></Card></section>}
+          <div>
+            <Card className="p-6 border-[#caa85e]/40 bg-card/95 shadow-xl h-full flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4"><span className="text-xs font-semibold uppercase tracking-widest text-[#caa85e]">Ativos</span><Flame className="h-4 w-4 text-[#caa85e]" /></div>
+                <h3 className="text-lg font-serif text-foreground mb-3">Leituras em Andamento</h3>
+                {readingBooks.length > 0 ? (
+                  <div className="space-y-3">
+                    {readingBooks.slice(0, 2).map(book => (
+                      <div key={book.id} className="p-3 rounded-lg bg-background/50 border border-[#caa85e]/20 flex items-center justify-between">
+                        <div className="min-w-0 pr-2">
+                          <p className="font-serif text-sm text-foreground truncate">{book.title}</p>
+                          <p className="text-xs text-muted-foreground">{book.currentPage} de {book.pages || '?'}</p>
+                        </div>
+                        <Link href={`/book/${book.id}`}><Button size="sm" variant="ghost" className="text-[#caa85e] hover:bg-[#caa85e]/10">Continuar</Button></Link>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Nenhum tomo aberto no momento. Escolha uma sugestão para iniciar sua jornada.</p>
+                )}
+              </div>
+              <div className="mt-6 pt-4 border-t border-border/60">
+                <Link href="/goals" className="text-xs text-[#caa85e] hover:underline flex items-center justify-between font-medium"><span>Acompanhar metas e sequência de leitura</span><span>→</span></Link>
+              </div>
+            </Card>
+          </div>
+        </div>
       </div>
     </Layout>
   );

@@ -6,9 +6,10 @@ interface BookCoverProps {
   className?: string;
 }
 
+const base = import.meta.env.BASE_URL || '/';
 const coverByTitle: Record<string, string> = {
-  'Duna': '/assets/vortex-cover-dune.jpg',
-  'O Hobbit': '/assets/vortex-cover-hobbit.jpg',
+  'Duna': `${base}assets/vortex-cover-dune.jpg`,
+  'O Hobbit': `${base}assets/vortex-cover-hobbit.jpg`,
 };
 
 const fallbackCovers = [
