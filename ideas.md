@@ -213,3 +213,9 @@ Este azul místico é imediatamente reconhecível como a cor da VORTEX — apare
 - Azul Arcano funciona como sinal de joia: aparece em ações primárias/estados ativos e sempre recebe acabamento de ouro envelhecido ou bronze.
 - O mini-ícone do guardião usa avatar circular com aro rúnico e permanece no canto superior esquerdo para criar continuidade entre as abas.
 - A varinha de clique é uma microinteração breve, com um único brilho dourado e respeito a prefers-reduced-motion.
+
+### Emendas da revisão do perfil atualizado
+
+- Cada seção principal deve incluir um selo de identidade VORTEX — portal espiral, runa, selo do guardião ou silhueta de dragão — integrado ao título ou à moldura.
+- Azul Arcano é a cor de interação do VORTEX: ações primárias e estados ativos usam o azul como sinal de joia, sempre acompanhado por detalhes em ouro envelhecido ou bronze.
+- Formulários, métricas e painéis de perfil devem parecer registros mágicos arquivados, com placas de catálogo, rótulos de manuscrito e molduras ornamentais discretas.

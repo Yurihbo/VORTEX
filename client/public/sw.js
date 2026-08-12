@@ -42,3 +42,16 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
   event.respondWith(event.request.mode === 'navigate' ? networkFirstNavigation(event.request) : cacheResponse(event.request));
 });
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || '/profile', self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+    const existing = clientList.find(client => 'focus' in client && client.url.startsWith(self.location.origin));
+    if (existing && 'focus' in existing) {
+      existing.navigate(target);
+      return existing.focus();
+    }
+    return self.clients.openWindow(target);
+  }));
+});

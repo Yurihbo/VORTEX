@@ -75,4 +75,11 @@ export interface UserProfile {
   favoriteBook: string;
   favoriteCharacter: string;
   favoriteVillain: string;
+  favoriteMedalId?: string;
+}
+
+export interface ReadingReminderSettings {
+  enabled: boolean;
+  time: string;
+  lastNotifiedDate?: string;
 }

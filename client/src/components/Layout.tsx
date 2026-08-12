@@ -6,6 +6,7 @@ import { VortexLogo } from './VortexLogo';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from './ui/button';
 import { storageService } from '@/services/storage';
+import { scheduleReadingReminder } from '@/services/readingReminder';
 
 interface LayoutProps { children: ReactNode; }
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>; };
@@ -39,7 +40,12 @@ export function Layout({ children }: LayoutProps) {
     };
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-    const handleProfileUpdated = () => setProfile(storageService.getUserProfile());
+    const handleProfileUpdated = () => {
+      setProfile(storageService.getUserProfile());
+      scheduleReadingReminder();
+    };
+    const handleReminderUpdated = () => scheduleReadingReminder();
+    const handleStreakUpdated = () => scheduleReadingReminder();
     updateStandalone();
     setIsOnline(navigator.onLine);
     window.addEventListener('beforeinstallprompt', handleInstallPrompt);
@@ -47,12 +53,17 @@ export function Layout({ children }: LayoutProps) {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('vortex-profile-updated', handleProfileUpdated);
+    window.addEventListener('vortex-reminder-updated', handleReminderUpdated);
+    window.addEventListener('vortex-streak-updated', handleStreakUpdated);
+    scheduleReadingReminder();
     media.addEventListener?.('change', updateStandalone);
     return () => {
       window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('vortex-profile-updated', handleProfileUpdated);
+      window.removeEventListener('vortex-reminder-updated', handleReminderUpdated);
+      window.removeEventListener('vortex-streak-updated', handleStreakUpdated);
       media.removeEventListener?.('change', updateStandalone);
     };
   }, []);

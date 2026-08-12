@@ -1,5 +1,5 @@
-import { ChangeEvent, FormEvent, PointerEvent, useEffect, useRef, useState } from 'react';
-import { Award, BookHeart, BookMarked, Camera, Clock3, Copy, Crown, Download, FileDown, FileUp, Flame, ImagePlus, Medal, Save, Share2, Shield, Skull, Sparkles, Sword, UserRound, X } from 'lucide-react';
+import { ChangeEvent, FormEvent, PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { Award, Bell, BellOff, BookHeart, BookMarked, CalendarDays, Camera, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Copy, Crown, Download, FileDown, FileUp, Flame, ImagePlus, Medal, Save, Share2, Shield, Skull, Sparkles, Sword, UserRound, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,9 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { storageService } from '@/services/storage';
+import { getNotificationPermission, requestReadingReminderPermission, scheduleReadingReminder } from '@/services/readingReminder';
 import { STREAK_MILESTONES, streakProgress } from '@/lib/readingMilestones';
-import { Book, ReadingStreak, UserProfile } from '@/types/book';
+import { Book, ReadingReminderSettings, ReadingStreak, UserProfile } from '@/types/book';
 
 const CROP_SIZE = 300;
 
@@ -69,6 +70,23 @@ function medalProgress(rule: MedalRule, booksRead: number, hoursRead: number) {
 
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Não foi possível preparar o cartão.')), 'image/png'));
+}
+
+const WEEKDAY_LABELS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
+function formatDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function monthCells(month: Date): Date[] {
+  const first = new Date(month.getFullYear(), month.getMonth(), 1);
+  const offset = (first.getDay() + 6) % 7;
+  const count = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const total = Math.ceil((offset + count) / 7) * 7;
+  return Array.from({ length: total }, (_, index) => new Date(month.getFullYear(), month.getMonth(), index - offset + 1));
 }
 
 function drawAchievementCard(profile: UserProfile, booksRead: number, hoursRead: number, streak: ReadingStreak, unlockedMedals: number, unlockedStreakMedals: number): Promise<Blob> {
@@ -143,6 +161,9 @@ export default function Profile() {
   const [profile, setProfile] = useState<UserProfile>(() => storageService.getUserProfile());
   const [savedProfile, setSavedProfile] = useState<UserProfile>(() => storageService.getUserProfile());
   const [streak, setStreak] = useState<ReadingStreak>(() => storageService.getReadingStreak());
+  const [reminderSettings, setReminderSettings] = useState<ReadingReminderSettings>(() => storageService.getReadingReminderSettings());
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => getNotificationPermission());
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [cropSource, setCropSource] = useState<string | null>(null);
   const [cropZoom, setCropZoom] = useState(1);
   const [cropPosition, setCropPosition] = useState<CropPosition>({ x: 0, y: 0 });
@@ -151,6 +172,11 @@ export default function Profile() {
   const unlockedMedals = MEDAL_RULES.filter(rule => medalProgress(rule, completed, savedProfile.totalReadingHours).unlocked).length;
   const unlockedStreakMedals = STREAK_MILESTONES.filter(rule => streakProgress(rule, streak.currentStreak, streak.bestStreak).unlocked).length;
   const nextMedal = MEDAL_RULES.find(rule => !medalProgress(rule, completed, savedProfile.totalReadingHours).unlocked);
+  const readingDateSet = useMemo(() => new Set(streak.readingDates || []), [streak.readingDates]);
+  const calendarDays = useMemo(() => monthCells(calendarMonth), [calendarMonth]);
+  const favoriteRegularMedal = MEDAL_RULES.find(rule => rule.id === savedProfile.favoriteMedalId && medalProgress(rule, completed, savedProfile.totalReadingHours).unlocked);
+  const favoriteStreakMedal = STREAK_MILESTONES.find(rule => rule.id === savedProfile.favoriteMedalId && streakProgress(rule, streak.currentStreak, streak.bestStreak).unlocked);
+  const FavoriteMedalIcon = favoriteRegularMedal?.icon;
 
   useEffect(() => {
     const refreshStreak = () => setStreak(storageService.getReadingStreak());
@@ -160,6 +186,57 @@ export default function Profile() {
 
   function update<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
     setProfile(current => ({ ...current, [key]: value }));
+  }
+
+  function persistReminderSettings(next: ReadingReminderSettings) {
+    storageService.saveReadingReminderSettings(next);
+    setReminderSettings(next);
+    scheduleReadingReminder();
+    window.dispatchEvent(new Event('vortex-reminder-updated'));
+  }
+
+  async function toggleReadingReminder() {
+    if (reminderSettings.enabled) {
+      persistReminderSettings({ ...reminderSettings, enabled: false });
+      toast.success('O lembrete diário foi silenciado.');
+      return;
+    }
+    const permission = await requestReadingReminderPermission();
+    setNotificationPermission(permission);
+    if (permission !== 'granted') {
+      toast.error(permission === 'denied' ? 'As notificações estão bloqueadas nas configurações do navegador.' : 'Este navegador não oferece notificações locais.');
+      return;
+    }
+    persistReminderSettings({ ...reminderSettings, enabled: true });
+    toast.success(`Lembrete ativado para ${reminderSettings.time}.`);
+  }
+
+  function updateReminderTime(time: string) {
+    const next = { ...reminderSettings, time };
+    setReminderSettings(next);
+    storageService.saveReadingReminderSettings(next);
+    scheduleReadingReminder();
+    window.dispatchEvent(new Event('vortex-reminder-updated'));
+  }
+
+  function chooseFavoriteMedal(id: string) {
+    const regular = MEDAL_RULES.find(rule => rule.id === id);
+    const streakRule = STREAK_MILESTONES.find(rule => rule.id === id);
+    const unlocked = regular ? medalProgress(regular, completed, savedProfile.totalReadingHours).unlocked : Boolean(streakRule && streakProgress(streakRule, streak.currentStreak, streak.bestStreak).unlocked);
+    if (!unlocked) {
+      toast.info('Desbloqueie esta medalha antes de destacá-la no seu retrato.');
+      return;
+    }
+    const nextProfile = { ...profile, favoriteMedalId: id };
+    storageService.saveUserProfile(nextProfile);
+    setProfile(nextProfile);
+    setSavedProfile(nextProfile);
+    window.dispatchEvent(new Event('vortex-profile-updated'));
+    toast.success('Medalha favorita destacada ao lado do seu retrato.');
+  }
+
+  function moveCalendarMonth(delta: number) {
+    setCalendarMonth(current => new Date(current.getFullYear(), current.getMonth() + delta, 1));
   }
 
   function openAvatarPicker() {
@@ -323,6 +400,7 @@ export default function Profile() {
                 <input ref={avatarRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={handleAvatarUpload} />
               </div>
               <div className="min-w-0 flex-1 text-center md:text-left"><p className="eyebrow">Seu retrato na Vortex</p><h2 className="mt-1 text-4xl font-serif">{savedProfile.displayName}</h2><p className="mt-2 max-w-2xl text-muted-foreground">{savedProfile.bio}</p><button type="button" className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-[.16em] text-[#caa85e] hover:text-primary transition-colors wand-click" onClick={openAvatarPicker}><ImagePlus className="h-4 w-4" /> Recortar e ajustar retrato</button></div>
+              {(favoriteRegularMedal || favoriteStreakMedal) && <div className="favorite-medal-highlight" title="Medalha favorita"><div className="favorite-medal-icon">{FavoriteMedalIcon ? <FavoriteMedalIcon className="h-7 w-7" /> : <span>{favoriteStreakMedal?.icon}</span>}</div><span className="favorite-medal-label">{favoriteRegularMedal?.label || favoriteStreakMedal?.label}</span></div>}
             </div>
             <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4"><div className="profile-stat"><BookHeart className="h-4 w-4 text-primary" /><strong>{books.length}</strong><span>Livros na coleção</span></div><div className="profile-stat"><Sparkles className="h-4 w-4 text-[#caa85e]" /><strong>{completed}</strong><span>Livros já lidos</span></div><div className="profile-stat"><Clock3 className="h-4 w-4 text-primary" /><strong>{savedProfile.totalReadingHours}h</strong><span>Horas lidas</span></div><div className="profile-stat"><Shield className="h-4 w-4 text-[#caa85e]" /><strong>{unlockedMedals}</strong><span>Medalhas</span></div></div>
           </Card>
@@ -335,7 +413,13 @@ export default function Profile() {
           <div className="flex flex-wrap items-center justify-end gap-3"><Button type="submit" className="wand-click"><Save className="h-4 w-4 mr-2" /> Guardar perfil</Button></div>
         </form>
 
-        <Card className="vortex-card p-6 md:p-7"><div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Salão das medalhas</p><h2 className="mt-1 text-3xl font-serif">Marcos da sua jornada</h2><p className="mt-2 text-sm text-muted-foreground">Cada medalha é calculada pelos livros concluídos, pelas horas registradas e pela constância da sua chama.</p></div><div className="medal-counter"><Medal className="h-4 w-4" /> {unlockedMedals + unlockedStreakMedals}/{MEDAL_RULES.length + STREAK_MILESTONES.length} desbloqueadas</div></div><div className="medal-grid">{MEDAL_RULES.map(rule => { const progress = medalProgress(rule, completed, savedProfile.totalReadingHours); const Icon = rule.icon; return <div key={rule.id} className={`medal-card ${progress.unlocked ? 'is-unlocked' : ''} tone-${rule.tone}`}><div className="medal-icon"><Icon className="h-6 w-6" /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><h3 className="font-serif text-xl leading-none">{rule.label}</h3><p className="mt-1 text-xs text-muted-foreground">{rule.description}</p></div>{progress.unlocked && <span className="medal-status">Conquistada</span>}</div><div className="medal-progress" aria-label={`${progress.current} de ${rule.target} ${rule.metric === 'books' ? 'livros' : 'horas'}`}><span style={{ width: `${progress.percentage}%` }} /></div><div className="mt-1 flex justify-between text-[.65rem] uppercase tracking-[.1em] text-muted-foreground"><span>{progress.current} {rule.metric === 'books' ? 'livros' : 'horas'}</span><span>{rule.target} {rule.metric === 'books' ? 'livros' : 'horas'}</span></div></div></div>; })}</div>{nextMedal && <div className="next-medal-note"><Sparkles className="h-4 w-4 text-[#caa85e]" /><span>Próximo marco: <strong>{nextMedal.label}</strong> — faltam {Math.max(0, nextMedal.target - (nextMedal.metric === 'books' ? completed : savedProfile.totalReadingHours))} {nextMedal.metric === 'books' ? 'livros' : 'horas'}.</span></div>}<div className="streak-medal-section"><div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Medalhas de constância</p><h3 className="mt-1 text-2xl font-serif">A chama da leitura</h3><p className="mt-1 text-sm text-muted-foreground">Sequência atual: {streak.currentStreak} dias · melhor marca: {streak.bestStreak} dias.</p></div><div className="streak-flame"><Flame className="h-4 w-4" /> {unlockedStreakMedals}/{STREAK_MILESTONES.length}</div></div><div className="medal-grid mt-4">{STREAK_MILESTONES.map(rule => { const progress = streakProgress(rule, streak.currentStreak, streak.bestStreak); return <div key={rule.id} className={`medal-card ${progress.unlocked ? 'is-unlocked' : ''} tone-${rule.tone}`}><div className="medal-icon streak-medal-symbol">{rule.icon}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><h4 className="font-serif text-xl leading-none">{rule.label}</h4><p className="mt-1 text-xs text-muted-foreground">{rule.description}</p></div>{progress.unlocked && <span className="medal-status">Conquistada</span>}</div><div className="medal-progress" aria-label={`${progress.best} de ${rule.days} dias`}><span style={{ width: `${progress.percentage}%` }} /></div><div className="mt-1 flex justify-between text-[.65rem] uppercase tracking-[.1em] text-muted-foreground"><span>Melhor: {progress.best}</span><span>Meta: {rule.days}</span></div></div></div>; })}</div></div></Card>
+        <div className="grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
+          <Card className="vortex-card p-6 md:p-7"><div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Mapa de leitura</p><h2 className="mt-1 flex items-center gap-2 text-3xl font-serif"><CalendarDays className="h-6 w-6 text-[#caa85e]" /> Calendário da chama</h2><p className="mt-2 text-sm text-muted-foreground">Veja os dias exatos em que você registrou leitura.</p></div><div className="calendar-month-controls"><button type="button" className="calendar-nav-button wand-click" aria-label="Mês anterior" onClick={() => moveCalendarMonth(-1)}><ChevronLeft className="h-4 w-4" /></button><span>{calendarMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</span><button type="button" className="calendar-nav-button wand-click" aria-label="Próximo mês" onClick={() => moveCalendarMonth(1)}><ChevronRight className="h-4 w-4" /></button></div></div><div className="reading-calendar-grid mt-6">{WEEKDAY_LABELS.map(day => <span key={day} className="calendar-weekday">{day}</span>)}{calendarDays.map(day => { const key = formatDateKey(day); const isCurrentMonth = day.getMonth() === calendarMonth.getMonth(); const isRead = readingDateSet.has(key); const isToday = key === formatDateKey(new Date()); return <span key={key} className={`calendar-day ${isCurrentMonth ? '' : 'is-outside'} ${isRead ? 'is-read' : ''} ${isToday ? 'is-today' : ''}`} title={isRead ? `Leitura registrada em ${day.toLocaleDateString('pt-BR')}` : day.toLocaleDateString('pt-BR')}>{day.getDate()}</span>; })}</div><div className="calendar-legend"><span><i className="calendar-legend-dot is-read" /> Dia lido</span><span><i className="calendar-legend-dot is-today" /> Hoje</span><strong>{streak.readingDates?.length || 0} dias registrados</strong></div></Card>
+
+          <Card className="vortex-card p-6 md:p-7"><div className="mb-6"><p className="eyebrow">Compromisso diário</p><h2 className="mt-1 flex items-center gap-2 text-3xl font-serif"><Bell className="h-6 w-6 text-[#caa85e]" /> Lembrete de leitura</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Receba um lembrete local para proteger sua sequência antes que o dia termine.</p></div><div className="reminder-panel"><div className="flex items-center justify-between gap-4"><div><span className="field-label">Estado do lembrete</span><p className="mt-1 text-sm text-muted-foreground">{reminderSettings.enabled ? `Ativo todos os dias às ${reminderSettings.time}` : 'Desativado até você escolher ativá-lo.'}</p></div><button type="button" className={`reminder-toggle ${reminderSettings.enabled ? 'is-on' : ''}`} aria-pressed={reminderSettings.enabled} onClick={toggleReadingReminder}>{reminderSettings.enabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}<span>{reminderSettings.enabled ? 'Ativo' : 'Ativar'}</span></button></div><div className="mt-5 flex items-center justify-between gap-4"><label htmlFor="reading-reminder-time" className="field-label">Horário diário</label><Input id="reading-reminder-time" type="time" value={reminderSettings.time} onChange={event => updateReminderTime(event.target.value)} className="max-w-[132px]" /></div><p className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted-foreground"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#caa85e]" />{notificationPermission === 'granted' ? 'Permissão concedida. Ao instalar a Vortex, o lembrete pode continuar acompanhando sua jornada.' : notificationPermission === 'denied' ? 'Notificações bloqueadas. Libere-as nas configurações do navegador para ativar.' : 'Ao ativar, o navegador pedirá permissão para enviar lembretes locais.'}</p></div></Card>
+        </div>
+
+        <Card className="vortex-card p-6 md:p-7"><div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Salão das medalhas</p><h2 className="mt-1 text-3xl font-serif">Marcos da sua jornada</h2><p className="mt-2 text-sm text-muted-foreground">Cada medalha é calculada pelos livros concluídos, pelas horas registradas e pela constância da sua chama.</p></div><div className="medal-counter"><Medal className="h-4 w-4" /> {unlockedMedals + unlockedStreakMedals}/{MEDAL_RULES.length + STREAK_MILESTONES.length} desbloqueadas</div></div><div className="medal-grid">{MEDAL_RULES.map(rule => { const progress = medalProgress(rule, completed, savedProfile.totalReadingHours); const Icon = rule.icon; return <div key={rule.id} className={`medal-card ${progress.unlocked ? 'is-unlocked' : ''} tone-${rule.tone}`}><div className="medal-icon"><Icon className="h-6 w-6" /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><h3 className="font-serif text-xl leading-none">{rule.label}</h3><p className="mt-1 text-xs text-muted-foreground">{rule.description}</p></div>{progress.unlocked && <span className="medal-status">Conquistada</span>}</div><div className="medal-progress" aria-label={`${progress.current} de ${rule.target} ${rule.metric === 'books' ? 'livros' : 'horas'}`}><span style={{ width: `${progress.percentage}%` }} /></div><div className="mt-1 flex justify-between text-[.65rem] uppercase tracking-[.1em] text-muted-foreground"><span>{progress.current} {rule.metric === 'books' ? 'livros' : 'horas'}</span><span>{rule.target} {rule.metric === 'books' ? 'livros' : 'horas'}</span></div><button type="button" disabled={!progress.unlocked} onClick={() => chooseFavoriteMedal(rule.id)} className={`medal-favorite-button ${savedProfile.favoriteMedalId === rule.id ? 'is-favorite' : ''}`}><Check className="h-3 w-3" /> {savedProfile.favoriteMedalId === rule.id ? 'Favorita' : progress.unlocked ? 'Destacar' : 'Bloqueada'}</button></div></div>; })}</div>{nextMedal && <div className="next-medal-note"><Sparkles className="h-4 w-4 text-[#caa85e]" /><span>Próximo marco: <strong>{nextMedal.label}</strong> — faltam {Math.max(0, nextMedal.target - (nextMedal.metric === 'books' ? completed : savedProfile.totalReadingHours))} {nextMedal.metric === 'books' ? 'livros' : 'horas'}.</span></div>}<div className="streak-medal-section"><div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Medalhas de constância</p><h3 className="mt-1 text-2xl font-serif">A chama da leitura</h3><p className="mt-1 text-sm text-muted-foreground">Sequência atual: {streak.currentStreak} dias · melhor marca: {streak.bestStreak} dias.</p></div><div className="streak-flame"><Flame className="h-4 w-4" /> {unlockedStreakMedals}/{STREAK_MILESTONES.length}</div></div><div className="medal-grid mt-4">{STREAK_MILESTONES.map(rule => { const progress = streakProgress(rule, streak.currentStreak, streak.bestStreak); return <div key={rule.id} className={`medal-card ${progress.unlocked ? 'is-unlocked' : ''} tone-${rule.tone}`}><div className="medal-icon streak-medal-symbol">{rule.icon}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><h4 className="font-serif text-xl leading-none">{rule.label}</h4><p className="mt-1 text-xs text-muted-foreground">{rule.description}</p></div>{progress.unlocked && <span className="medal-status">Conquistada</span>}</div><div className="medal-progress" aria-label={`${progress.best} de ${rule.days} dias`}><span style={{ width: `${progress.percentage}%` }} /></div><div className="mt-1 flex justify-between text-[.65rem] uppercase tracking-[.1em] text-muted-foreground"><span>Melhor: {progress.best}</span><span>Meta: {rule.days}</span></div><button type="button" disabled={!progress.unlocked} onClick={() => chooseFavoriteMedal(rule.id)} className={`medal-favorite-button ${savedProfile.favoriteMedalId === rule.id ? 'is-favorite' : ''}`}><Check className="h-3 w-3" /> {savedProfile.favoriteMedalId === rule.id ? 'Favorita' : progress.unlocked ? 'Destacar' : 'Bloqueada'}</button></div></div>; })}</div></div></Card>
 
         <Card className="vortex-card achievement-share-card p-6 md:p-7"><div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between"><div><p className="eyebrow">Cartão de conquistas</p><h2 className="mt-1 text-3xl font-serif">Leve sua jornada para além da biblioteca</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Gere uma imagem com seus marcos, medalhas e sequência para compartilhar nas redes sociais.</p></div><div className="achievement-share-mark"><Medal className="h-8 w-8" /><span>{unlockedMedals + unlockedStreakMedals}</span></div></div><div className="achievement-share-preview"><div><span className="share-preview-label">VORTEX · CONQUISTAS</span><strong>{savedProfile.displayName || 'Leitor Vortex'}</strong><p>{completed} livros · {savedProfile.totalReadingHours}h · {streak.currentStreak} dias de chama</p></div><div className="share-preview-glyph">✦</div></div><div className="flex flex-wrap gap-3"><Button type="button" className="wand-click" onClick={shareAchievements}><Share2 className="mr-2 h-4 w-4" /> Compartilhar cartão</Button><Button type="button" variant="outline" className="wand-click" onClick={copyAchievementText}><Copy className="mr-2 h-4 w-4" /> Copiar resumo</Button><p className="flex basis-full items-center gap-2 text-xs text-muted-foreground"><FileDown className="h-3.5 w-3.5" /> Em computadores sem compartilhamento nativo, o cartão PNG é baixado automaticamente.</p></div></Card>
 

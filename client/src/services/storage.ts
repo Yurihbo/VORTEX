@@ -1,4 +1,4 @@
-import { Book, ReadingGoal, Achievement, ReadingStreak, LibraryStats, UserProfile } from '@/types/book';
+import { Book, ReadingGoal, Achievement, ReadingStreak, LibraryStats, ReadingReminderSettings, UserProfile } from '@/types/book';
 
 const STORAGE_KEYS = {
   BOOKS: 'vortex_books',
@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   READING_STREAK: 'vortex_reading_streak',
   LIBRARY_STATS: 'vortex_library_stats',
   USER_PROFILE: 'vortex_user_profile',
+  READING_REMINDER: 'vortex_reading_reminder',
 };
 
 const DEFAULT_PROFILE: UserProfile = {
@@ -16,6 +17,11 @@ const DEFAULT_PROFILE: UserProfile = {
   favoriteBook: '',
   favoriteCharacter: '',
   favoriteVillain: '',
+  favoriteMedalId: undefined,
+};
+const DEFAULT_REMINDER: ReadingReminderSettings = {
+  enabled: false,
+  time: '20:00',
 };
 
 // Default demo books
@@ -327,6 +333,20 @@ export const storageService = {
     };
   },
 
+  // Daily reading reminder
+  getReadingReminderSettings(): ReadingReminderSettings {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.READING_REMINDER);
+      if (!stored) return { ...DEFAULT_REMINDER };
+      const parsed = JSON.parse(stored) as Partial<ReadingReminderSettings>;
+      return { ...DEFAULT_REMINDER, ...parsed, enabled: Boolean(parsed.enabled), time: /^([01]\\d|2[0-3]):[0-5]\\d$/.test(String(parsed.time)) ? String(parsed.time) : DEFAULT_REMINDER.time };
+    } catch {
+      return { ...DEFAULT_REMINDER };
+    }
+  },
+  saveReadingReminderSettings(settings: ReadingReminderSettings): void {
+    localStorage.setItem(STORAGE_KEYS.READING_REMINDER, JSON.stringify({ ...DEFAULT_REMINDER, ...settings }));
+  },
   // Export/Import
   exportLibrary(): string {
     const data = {
@@ -335,6 +355,7 @@ export const storageService = {
       achievements: this.getAchievements(),
       readingStreak: this.getReadingStreak(),
       userProfile: this.getUserProfile(),
+      readingReminder: this.getReadingReminderSettings(),
       exportDate: new Date().toISOString(),
     };
     return JSON.stringify(data, null, 2);
@@ -349,6 +370,7 @@ export const storageService = {
         if (data.achievements) this.saveAchievements(data.achievements);
         if (data.readingStreak) this.saveReadingStreak(data.readingStreak);
         if (data.userProfile) this.saveUserProfile({ ...DEFAULT_PROFILE, ...data.userProfile });
+        if (data.readingReminder) this.saveReadingReminderSettings({ ...DEFAULT_REMINDER, ...data.readingReminder });
         return true;
       }
       return false;

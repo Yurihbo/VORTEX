@@ -1,10 +1,9 @@
-# Medalhas de sequência e compartilhamento
+# Lembretes, calendário e medalha favorita
 
-- [x] Auditar os dados de leitura e os componentes atuais de conquistas.
-- [x] Implementar cálculo de dias consecutivos com datas reais de leitura.
-- [x] Adicionar medalhas especiais para sequências de 3, 7, 14, 30 e 100 dias.
-- [x] Exibir sequência atual, melhor sequência e progresso até o próximo marco.
-- [x] Criar cartão visual de conquistas com identidade VORTEX.
-- [x] Adicionar compartilhamento nativo e fallback de download/cópia.
+- [x] Auditar o perfil, a sequência de leitura, o armazenamento e as APIs de notificação disponíveis.
+- [x] Implementar lembrete local diário com permissão, horário configurável e opção de ativar/desativar.
+- [x] Criar calendário mensal com navegação entre meses e destaque dos dias registrados.
+- [x] Permitir escolher uma medalha favorita e persistir a escolha no perfil.
+- [x] Exibir a medalha favorita em destaque ao lado da foto de perfil.
 - [x] Validar acessibilidade visual, responsividade, TypeScript e build.
 - [ ] Criar checkpoint da atualização.
