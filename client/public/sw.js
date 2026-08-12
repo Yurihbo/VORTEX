@@ -1,8 +1,8 @@
-const CACHE_NAME = 'vortex-shell-v2';
-const APP_SHELL = ['/', '/manifest.json', '/vortex-icon.svg'];
+const CACHE_NAME = 'vortex-cache-v2';
+const APP_SHELL = ['./', './manifest.json', './vortex-icon.svg'];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).catch(() => {}));
   self.skipWaiting();
 });
 
@@ -21,7 +21,7 @@ async function cacheResponse(request) {
     }
     return response;
   } catch {
-    return caches.match('/') || new Response('VORTEX offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    return caches.match('./') || caches.match('/') || new Response('VORTEX offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }
 }
 
@@ -34,7 +34,7 @@ async function networkFirstNavigation(request) {
     }
     return response;
   } catch {
-    return caches.match(request) || caches.match('/') || new Response('VORTEX offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    return caches.match(request) || caches.match('./') || caches.match('/') || new Response('VORTEX offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }
 }
 
@@ -45,7 +45,7 @@ self.addEventListener('fetch', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const target = new URL(event.notification.data?.url || '/profile', self.location.origin).href;
+  const target = new URL(event.notification.data?.url || './profile', self.location.origin).href;
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
     const existing = clientList.find(client => 'focus' in client && client.url.startsWith(self.location.origin));
     if (existing && 'focus' in existing) {
