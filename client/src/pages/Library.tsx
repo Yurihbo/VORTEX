@@ -67,7 +67,7 @@ export default function Library() {
     setBooks(storageService.getBooks()); 
   }, []);
 
-  // Buscador inteligente com fallback e tolerância a erros (Google Books + Open Library)
+  // Buscador inteligente multicanal (Google Books BR/Global + Open Library) para abranger editoras nacionais (DarkSide, HarperCollins, etc.)
   const handleApiSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const query = apiQuery.trim();
@@ -75,65 +75,75 @@ export default function Library() {
 
     setIsSearchingApi(true);
     setApiSearchActive(true);
-    let results: ApiBookResult[] = [];
+    const resultMap = new Map<string, ApiBookResult>();
 
+    // 1. Consulta Google Books com restrição de idioma PT e busca global para abranger editoras brasileiras
     try {
-      // Tentativa 1: Google Books API
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=16`);
-      const data = await res.json();
-      if (data.items && data.items.length > 0) {
-        results = data.items.map((item: any, index: number) => {
-          const info = item.volumeInfo || {};
-          const edition = getEditionInfo(item.saleInfo?.country || item.accessInfo?.country || info.language);
-          const formatType: 'Físico' | 'E-book' = item.accessInfo?.epub?.isAvailable ? 'E-book' : (item.accessInfo?.pdf?.isAvailable ? 'E-book' : 'Físico');
+      const [resPt, resGlobal] = await Promise.all([
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&langRestrict=pt&maxResults=16`),
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=16`)
+      ]);
+      const [dataPt, dataGlobal] = await Promise.all([resPt.json(), resGlobal.json()]);
 
-          return {
-            id: item.id || 'gb_' + index + Math.random(),
-            title: info.title || query,
-            authors: info.authors || ['Autor Desconhecido'],
-            pageCount: info.pageCount || Math.floor(Math.random() * 250) + 200,
-            thumbnail: info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80',
+      const items = [...(dataPt.items || []), ...(dataGlobal.items || [])];
+      items.forEach((item: any, index: number) => {
+        const info = item.volumeInfo || {};
+        const title = info.title || query;
+        const key = title.toLowerCase().trim();
+        if (resultMap.has(key)) return;
+
+        const edition = getEditionInfo(info.language || item.saleInfo?.country);
+        const formatType: 'Físico' | 'E-book' = item.accessInfo?.epub?.isAvailable || item.accessInfo?.pdf?.isAvailable ? 'E-book' : 'Físico';
+
+        resultMap.set(key, {
+          id: item.id || 'gb_' + index + Math.random(),
+          title: title,
+          authors: info.authors || ['Autor Desconhecido'],
+          pageCount: info.pageCount || Math.floor(Math.random() * 200) + 240,
+          thumbnail: info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80',
+          countryFlag: edition.flag,
+          countryName: edition.name,
+          format: formatType,
+          publishedDate: info.publishedDate ? info.publishedDate.substring(0, 4) : '2024'
+        });
+      });
+    } catch (err) {
+      console.warn("Google Books falhou parcialmente:", err);
+    }
+
+    // 2. Consulta Open Library para complementar obras raras ou clássicos de editoras nacionais
+    try {
+      const olRes = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=16`);
+      const olData = await olRes.json();
+      if (olData.docs && olData.docs.length > 0) {
+        olData.docs.forEach((doc: any, index: number) => {
+          const title = doc.title || query;
+          const key = title.toLowerCase().trim();
+          if (resultMap.has(key)) return;
+
+          const edition = getEditionInfo(doc.language?.[0] || doc.publish_country?.[0]);
+          const formatType: 'Físico' | 'E-book' = doc.ebook_access ? 'E-book' : 'Físico';
+
+          resultMap.set(key, {
+            id: 'ol_' + index + Math.random(),
+            title: title,
+            authors: doc.author_name || ['Autor Desconhecido'],
+            pageCount: doc.number_of_pages_median || 320,
+            thumbnail: doc.cover_i 
+              ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` 
+              : 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80',
             countryFlag: edition.flag,
             countryName: edition.name,
             format: formatType,
-            publishedDate: info.publishedDate ? info.publishedDate.substring(0, 4) : '2024'
-          };
+            publishedDate: doc.first_publish_year ? String(doc.first_publish_year) : '2024'
+          });
         });
       }
-    } catch (err) {
-      console.warn("Google Books falhou, tentando Open Library:", err);
+    } catch (olErr) {
+      console.warn("Open Library falhou parcialmente:", olErr);
     }
 
-    // Se o Google Books não retornou nada ou falhou, tenta o Open Library como fallback tolerante
-    if (results.length === 0) {
-      try {
-        const olRes = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=16`);
-        const olData = await olRes.json();
-        if (olData.docs && olData.docs.length > 0) {
-          results = olData.docs.map((doc: any, index: number) => {
-            const edition = getEditionInfo(doc.publish_country || doc.country || doc.language || doc.publish_place);
-            const formatType: 'Físico' | 'E-book' = doc.ebook_access || doc.public_scan_b || doc.ebook_count ? 'E-book' : 'Físico';
-            return {
-              id: 'ol_' + index + Math.random(),
-              title: doc.title || query,
-              authors: doc.author_name || ['Autor Desconhecido'],
-              pageCount: doc.number_of_pages_median || 320,
-              thumbnail: doc.cover_i 
-                ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` 
-                : 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80',
-              countryFlag: edition.flag,
-              countryName: edition.name,
-              format: formatType,
-              publishedDate: doc.first_publish_year ? String(doc.first_publish_year) : '2024'
-            };
-          });
-        }
-      } catch (olErr) {
-        console.error("Erro no Open Library:", olErr);
-      }
-    }
-
-    setApiResults(results);
+    setApiResults(Array.from(resultMap.values()).slice(0, 24));
     setIsSearchingApi(false);
   };
 
@@ -159,8 +169,8 @@ export default function Library() {
     setBooks(updated);
     storageService.saveBooks(updated);
 
-    setSuccessToast(`Tomo "${apiBook.title}" adicionado com sucesso!`);
-    setTimeout(() => setSuccessToast(null), 3500);
+    setSuccessToast(`✨ [CONJURAÇÃO BEM-SUCEDIDA] Tomo "${apiBook.title}" absorvido para a estante mística! 📜⚡`);
+    setTimeout(() => setSuccessToast(null), 4000);
   };
 
   const handleRemoveBook = (bookId: string, e: React.MouseEvent) => {
@@ -203,8 +213,8 @@ export default function Library() {
         {/* Buscador Literário Clean e Elegante */}
         <Card className="vortex-card p-6 border-[#caa85e]/30 bg-card/95 shadow-2xl relative overflow-hidden">
           {successToast && (
-            <div className="absolute top-0 inset-x-0 bg-emerald-600/90 text-white text-xs py-2 px-4 text-center font-serif flex items-center justify-center gap-2 animate-bounce shadow-md z-30">
-              <span>✨</span> {successToast}
+            <div className="absolute top-0 inset-x-0 bg-gradient-to-r from-[#1a1408] via-[#3d2f0f] to-[#1a1408] border-b border-[#caa85e] text-[#f3e5ab] text-xs py-2.5 px-4 text-center font-serif flex items-center justify-center gap-2 animate-pulse shadow-lg z-30">
+              <span className="text-base animate-spin">🔮</span> <strong>Runa de Invocação Ativada:</strong> {successToast} <span className="text-base animate-bounce">⚡</span>
             </div>
           )}
           <div className="flex items-center gap-2.5 mb-2">
