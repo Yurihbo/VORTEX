@@ -18,12 +18,14 @@ type MedalRule = { id: string; label: string; description: string; icon: typeof 
 
 type CompanionOption = { id: string; label: string; role: string; description: string; symbol: string; reaction: string; styleClass: string; imageUrl: string };
 
+const companionAsset = (fileName: string) => `${import.meta.env.BASE_URL}companions/${fileName}`;
+
 const COMPANIONS: CompanionOption[] = [
-  { id: 'owl', label: 'Coruja das Neves', role: 'Mensageira dos Tomos', description: 'A guardiã branca dos arquivos, com olhos âmbar e sabedoria para encontrar páginas esquecidas.', symbol: '🦉', reaction: '"As páginas sussurram uma nova mensagem."', styleClass: 'type-owl', imageUrl: '/manus-storage/companion_coruja_neves_user_f6ff69f6.png' },
-  { id: 'dragon', label: 'Dragão Vermelho', role: 'Guardião das Chamas', description: 'O protetor rubro do acervo, envolto em runas de fogo e pronto para aquecer sua sequência.', symbol: '🐉', reaction: '"A chama da leitura arde em brasa!"', styleClass: 'type-dragon', imageUrl: '/manus-storage/companion_dragao_vermelho_user_59b1514b.png' },
-  { id: 'fox', label: 'Raposa Patrono', role: 'Exploradora de Estantes', description: 'Um espírito azul-prateado que atravessa a névoa e revela atalhos entre suas coleções.', symbol: '🦊', reaction: '"Encontrei um tomo raro para ti."', styleClass: 'type-fox', imageUrl: '/manus-storage/companion_raposa_patrono_user_7b198e1e.png' },
-  { id: 'hippogriff', label: 'Hipogrifo', role: 'Sentinela dos Céus', description: 'A sentinela alada do santuário, nobre e vigilante sobre cada nova meta de leitura.', symbol: '🦅', reaction: '"Erga os olhos: há novas jornadas além das estantes."', styleClass: 'type-griffin', imageUrl: '/manus-storage/companion_hippogrifo_user_a0ebb1f8.png' },
-  { id: 'cat', label: 'Gatinha Tricolor', role: 'Musa dos Manuscritos', description: 'Uma guardiã de pelagem laranja, preta e branca que transforma cada sessão em aconchego.', symbol: '🐈', reaction: '"Ronrom... escolha uma história para aquecer a noite."', styleClass: 'type-cat', imageUrl: '/manus-storage/companion_gatinha_tricolor_user_909a5ad3.png' },
+  { id: 'owl', label: 'Coruja das Neves', role: 'Mensageira dos Tomos', description: 'A guardiã branca dos arquivos, com olhos âmbar e sabedoria para encontrar páginas esquecidas.', symbol: '🦉', reaction: '"As páginas sussurram uma nova mensagem."', styleClass: 'type-owl', imageUrl: companionAsset('coruja-das-neves.webp') },
+  { id: 'dragon', label: 'Dragão Vermelho', role: 'Guardião das Chamas', description: 'O protetor rubro do acervo, envolto em runas de fogo e pronto para aquecer sua sequência.', symbol: '🐉', reaction: '"A chama da leitura arde em brasa!"', styleClass: 'type-dragon', imageUrl: companionAsset('dragao-vermelho.webp') },
+  { id: 'fox', label: 'Raposa Patrono', role: 'Exploradora de Estantes', description: 'Um espírito azul-prateado que atravessa a névoa e revela atalhos entre suas coleções.', symbol: '🦊', reaction: '"Encontrei um tomo raro para ti."', styleClass: 'type-fox', imageUrl: companionAsset('raposa-patrono.webp') },
+  { id: 'hippogriff', label: 'Hipogrifo', role: 'Sentinela dos Céus', description: 'A sentinela alada do santuário, nobre e vigilante sobre cada nova meta de leitura.', symbol: '🦅', reaction: '"Erga os olhos: há novas jornadas além das estantes."', styleClass: 'type-griffin', imageUrl: companionAsset('hippogrifo.webp') },
+  { id: 'cat', label: 'Gatinha Tricolor', role: 'Musa dos Manuscritos', description: 'Uma guardiã de pelagem laranja, preta e branca que transforma cada sessão em aconchego.', symbol: '🐈', reaction: '"Ronrom... escolha uma história para aquecer a noite."', styleClass: 'type-cat', imageUrl: companionAsset('gatinha-tricolor.webp') },
 ];
 
 const MEDAL_RULES: MedalRule[] = [
