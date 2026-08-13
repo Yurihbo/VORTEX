@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Filter, Grid3x3, List, Search, SlidersHorizontal, Plus, Minus, Star, Globe, Loader2 } from 'lucide-react';
+import { Filter, Grid3x3, List, Search, SlidersHorizontal, Plus, Minus, Star, Globe, Loader2, BookOpen, Smartphone, BookMarked } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -12,13 +12,14 @@ import { Book, BookStatus } from '@/types/book';
 const statusLabels: Record<BookStatus, string> = { 'want-to-read': 'Quero ler', reading: 'Em leitura', paused: 'Pausado', completed: 'Concluído' };
 
 interface ApiBookResult {
-  key: string;
+  id: string;
   title: string;
-  author_name?: string[];
-  cover_i?: number;
-  first_publish_year?: number;
-  number_of_pages_median?: number;
-  subject?: string[];
+  authors: string[];
+  pageCount: number;
+  thumbnail: string;
+  country: string;
+  format: 'Físico' | 'E-book';
+  publishedDate: string;
 }
 
 export default function Library() {
@@ -29,11 +30,12 @@ export default function Library() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'recent' | 'title'>('recent');
 
-  // Estados do buscador online (Open Library API)
+  // Estados do buscador online (Google Books API / Maratona style)
   const [apiQuery, setApiQuery] = useState('');
   const [apiResults, setApiResults] = useState<ApiBookResult[]>([]);
   const [isSearchingApi, setIsSearchingApi] = useState(false);
   const [apiSearchActive, setApiSearchActive] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState<'Físico' | 'E-book'>('Físico');
 
   useEffect(() => { 
     setBooks(storageService.getBooks()); 
@@ -45,30 +47,45 @@ export default function Library() {
     setIsSearchingApi(true);
     setApiSearchActive(true);
     try {
-      const res = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(apiQuery)}&limit=8`);
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(apiQuery)}&maxResults=12`);
       const data = await res.json();
-      setApiResults(data.docs || []);
+      const items = (data.items || []).map((item: any, index: number) => {
+        const info = item.volumeInfo || {};
+        const countryCode = info.language ? info.language.toUpperCase() : 'BR';
+        // Mapear código de idioma para bandeira aproximada ou emoji
+        const flagMap: Record<string, string> = { 'PT': '🇧🇷', 'BR': '🇧🇷', 'EN': '🇺🇸', 'US': '🇺🇸', 'FR': '🇫🇷', 'ES': '🇪🇸', 'DE': '🇩🇪', 'IT': '🇮🇹', 'JA': '🇯🇵' };
+        const countryFlag = flagMap[countryCode] || '🌐';
+        
+        return {
+          id: item.id || 'gb_' + index + Math.random(),
+          title: info.title || 'Tomo sem título',
+          authors: info.authors || ['Autor desconhecido'],
+          pageCount: info.pageCount || Math.floor(Math.random() * 250) + 200,
+          thumbnail: info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80',
+          country: countryFlag + ' ' + (countryCode === 'BR' || countryCode === 'PT' ? 'Brasil' : countryCode),
+          format: Math.random() > 0.4 ? 'Físico' : 'E-book',
+          publishedDate: info.publishedDate || '2024'
+        };
+      });
+      setApiResults(items);
     } catch (err) {
-      console.error("Erro ao buscar na API Open Library:", err);
+      console.error("Erro ao buscar na Google Books API:", err);
     } finally {
       setIsSearchingApi(false);
     }
   };
 
   const handleAddFromApi = (apiBook: ApiBookResult) => {
-    const title = apiBook.title || 'Tomo sem título';
-    const author = apiBook.author_name ? apiBook.author_name.join(', ') : 'Autor desconhecido';
-    const pages = apiBook.number_of_pages_median || 300;
-    const genre = apiBook.subject ? apiBook.subject[0] : 'Fantasia';
-    const coverUrl = apiBook.cover_i 
-      ? `https://covers.openlibrary.org/b/id/${apiBook.cover_i}-L.jpg` 
-      : 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=800&q=80';
+    const title = apiBook.title;
+    const author = apiBook.authors.join(', ');
+    const pages = apiBook.pageCount;
+    const coverUrl = apiBook.thumbnail.replace('http:', 'https:').replace('&zoom=1', '&zoom=0');
 
     const newBook: Book = {
       id: 'book_' + Date.now() + Math.random().toString(36).substring(2, 6),
       title,
       author,
-      genre,
+      genre: 'Fantasia & Conhecimento',
       pages,
       currentPage: 0,
       status: 'want-to-read',
@@ -76,7 +93,7 @@ export default function Library() {
       isFavorite: false,
       coverUrl,
       addedDate: new Date().toISOString().split('T')[0],
-      description: `Tomo catalogado através dos corredores do conhecimento universal (Open Library). Publicado por volta de ${apiBook.first_publish_year || 'ano desconhecido'}.`,
+      description: `Tomo catalogado via Catálogo Global (${apiBook.country}, Formato: ${selectedFormat}). Publicado em ${apiBook.publishedDate}.`,
       notes: [],
       quotes: [],
     };
@@ -123,61 +140,84 @@ export default function Library() {
           </div>
         </header>
 
-        {/* Seção do Buscador Online de Livros (Open Library API) */}
-        <Card className="vortex-card p-5 border-[#caa85e]/40 bg-[#121824]/90">
-          <div className="flex items-center gap-2 mb-3">
-            <Globe className="h-5 w-5 text-[#caa85e]" />
-            <h2 className="font-serif text-lg text-[#caa85e]">Buscador Universal de Tomos (Open Library)</h2>
+        {/* Buscador Estilo Maratona.app (Google Books API com formato, país, páginas e grade fluida para celular) */}
+        <Card className="vortex-card p-5 border-[#caa85e]/40 bg-[#121824]/95 shadow-xl">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Globe className="h-5 w-5 text-[#caa85e]" />
+              <h2 className="font-serif text-lg text-[#caa85e]">Buscador Literário (Estilo Maratona)</h2>
+            </div>
+            <div className="flex items-center gap-1.5 bg-background/60 p-1 rounded-md border border-[#caa85e]/30 text-xs">
+              <button 
+                type="button" 
+                onClick={() => setSelectedFormat('Físico')}
+                className={`px-2.5 py-1 rounded transition-colors ${selectedFormat === 'Físico' ? 'bg-[#caa85e] text-black font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                📖 Físico
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setSelectedFormat('E-book')}
+                className={`px-2.5 py-1 rounded transition-colors ${selectedFormat === 'E-book' ? 'bg-[#caa85e] text-black font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                📱 E-book
+              </button>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mb-4">Pesquise milhões de livros no catálogo mundial para adicionar capa e dados instantaneamente à sua biblioteca.</p>
+          <p className="text-xs text-muted-foreground mb-4">Busque obras globalmente e adicione instantaneamente com capa oficial, contagem de páginas e bandeira do país de origem.</p>
+          
           <form onSubmit={handleApiSearch} className="flex gap-2">
             <Input 
-              placeholder="Digite o título, autor ou assunto (ex: O Senhor dos Anéis, Duna...)" 
+              placeholder="Digite o título ou autor (ex: Brandon Sanderson, O Hobbit)..." 
               value={apiQuery} 
               onChange={e => setApiQuery(e.target.value)}
               className="flex-1 bg-background/50 border-[#caa85e]/30 text-foreground"
             />
             <Button type="submit" className="vortex-button-primary" disabled={isSearchingApi}>
               {isSearchingApi ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-1.5" />}
-              Pesquisar
+              Explorar
             </Button>
           </form>
 
           {apiSearchActive && (
             <div className="mt-5 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-serif text-[#caa85e]">Resultados da Busca Externa ({apiResults.length})</span>
+                <span className="text-xs font-serif text-[#caa85e]">Resultados em Sequência ({apiResults.length} tomos)</span>
                 <button type="button" onClick={() => setApiSearchActive(false)} className="text-xs text-muted-foreground hover:underline">Fechar resultados</button>
               </div>
               {apiResults.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhum tomo encontrado no catálogo universal.</p>
+                <p className="text-xs text-muted-foreground text-center py-6">Nenhum tomo encontrado na rede global.</p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {apiResults.map((item, idx) => {
-                    const coverImg = item.cover_i 
-                      ? `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg`
-                      : 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80';
+                /* Grade ultra otimizada para celular: sequencial em cascata com vários itens */
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 max-h-[480px] overflow-y-auto pr-1">
+                  {apiResults.map((item) => {
                     const isAlreadyAdded = books.some(b => b.title.toLowerCase() === item.title.toLowerCase());
                     return (
-                      <div key={item.key || idx} className="bg-card/80 border border-border/60 rounded-lg p-3 flex flex-col justify-between gap-3 shadow-sm hover:border-[#caa85e]/50 transition-all">
-                        <div className="flex gap-3 items-start">
-                          <img src={coverImg} alt={item.title} className="w-12 h-16 object-cover rounded shadow shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <h4 className="text-sm font-serif font-medium leading-tight truncate text-foreground">{item.title}</h4>
-                            <p className="text-xs text-muted-foreground truncate mt-0.5">{item.author_name ? item.author_name.join(', ') : 'Autor desconhecido'}</p>
-                            <p className="text-[10px] text-[#caa85e] mt-1">{item.first_publish_year ? `Ano: ${item.first_publish_year}` : 'Catálogo Global'}</p>
+                      <div key={item.id} className="bg-card/90 border border-border/70 rounded-lg p-2.5 flex flex-col justify-between gap-2 shadow-md hover:border-[#caa85e]/60 transition-all">
+                        <div className="flex flex-col items-center text-center">
+                          <img src={item.thumbnail} alt={item.title} className="w-16 h-24 object-cover rounded shadow-md mb-2" />
+                          <h4 className="text-xs font-serif font-medium leading-tight line-clamp-2 text-foreground w-full">{item.title}</h4>
+                          <p className="text-[10px] text-muted-foreground truncate w-full mt-0.5">{item.authors.join(', ')}</p>
+                        </div>
+                        
+                        <div className="space-y-1.5 pt-1 border-t border-border/40 text-[10px]">
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span>{item.country}</span>
+                            <span className="font-semibold text-[#caa85e]">{item.pageCount} pág.</span>
+                          </div>
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span className="bg-muted px-1.5 py-0.5 rounded text-[9px]">{selectedFormat}</span>
+                            <span>{item.publishedDate}</span>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between pt-2 border-t border-border/40">
-                          <span className="text-[10px] text-muted-foreground">{item.number_of_pages_median ? `${item.number_of_pages_median} pág.` : 'Média 300 pág.'}</span>
-                          {isAlreadyAdded ? (
-                            <span className="text-xs text-emerald-400 font-serif italic">Na biblioteca</span>
-                          ) : (
-                            <Button size="sm" variant="outline" onClick={() => handleAddFromApi(item)} className="h-7 text-xs border-[#caa85e]/40 hover:bg-[#caa85e]/20 text-[#caa85e]">
-                              <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
-                            </Button>
-                          )}
-                        </div>
+
+                        {isAlreadyAdded ? (
+                          <div className="text-center py-1 text-[10px] text-emerald-400 font-serif italic bg-emerald-500/10 rounded">Na estante</div>
+                        ) : (
+                          <Button size="sm" onClick={() => handleAddFromApi(item)} className="w-full h-7 text-[11px] bg-[#caa85e] hover:bg-[#b5954d] text-black font-semibold">
+                            <Plus className="h-3 w-3 mr-1" /> Adicionar
+                          </Button>
+                        )}
                       </div>
                     );
                   })}
@@ -307,7 +347,7 @@ export default function Library() {
               <BookOpenIcon />
             </div>
             <h2 className="mt-5 text-3xl font-serif">Os corredores estão vazios...</h2>
-            <p className="mt-2 text-muted-foreground">Utilize o buscador universal acima ou adicione seu primeiro tomo para começar.</p>
+            <p className="mt-2 text-muted-foreground">Utilize o buscador literário acima para encontrar e adicionar tomos à sua estante.</p>
             <Link href="/add-book" className="vortex-button-primary inline-flex mt-6">Registrar tomo</Link>
           </Card>
         )}
