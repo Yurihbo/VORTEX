@@ -67,7 +67,7 @@ export default function Library() {
     setBooks(storageService.getBooks()); 
   }, []);
 
-  // Buscador multicanal ampliado para abranger edições de editoras brasileiras (DarkSide, HarperCollins, etc.)
+  // Buscador multicanal super-reforçado para catálogos nacionais (DarkSide, HarperCollins, Intrínseca, Companhia das Letras, etc.)
   const handleApiSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const query = apiQuery.trim();
@@ -78,29 +78,44 @@ export default function Library() {
     const resultMap = new Map<string, ApiBookResult>();
 
     try {
-      const [resBr, resGlobal, resPub] = await Promise.all([
-        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query + ' edition:br')}&maxResults=16`),
-        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=16`),
-        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query + ' editora')}&maxResults=16`)
+      const [resBr, resDark, resHarper, resGlobal] = await Promise.all([
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query + ' lang:pt')}&maxResults=20`),
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query + ' darkside')}&maxResults=10`),
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query + ' harpercollins')}&maxResults=10`),
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=15`)
       ]);
-      const [dataBr, dataGlobal, dataPub] = await Promise.all([resBr.json(), resGlobal.json(), resPub.json()]);
+      const [dataBr, dataDark, dataHarper, dataGlobal] = await Promise.all([
+        resBr.json(), 
+        resDark.json(), 
+        resHarper.json(), 
+        resGlobal.json()
+      ]);
 
-      const items = [...(dataBr.items || []), ...(dataGlobal.items || []), ...(dataPub.items || [])];
+      const items = [
+        ...(dataBr.items || []), 
+        ...(dataDark.items || []), 
+        ...(dataHarper.items || []), 
+        ...(dataGlobal.items || [])
+      ];
+
       items.forEach((item: any, index: number) => {
         const info = item.volumeInfo || {};
         const title = info.title || query;
         const publisher = info.publisher || '';
+        const subtitle = info.subtitle ? ` - ${info.subtitle}` : '';
         const uniqueKey = (title + '_' + publisher).toLowerCase().trim();
         if (resultMap.has(uniqueKey)) return;
 
-        const edition = getEditionInfo(info.language || item.saleInfo?.country || (publisher.toLowerCase().includes('darkside') || publisher.toLowerCase().includes('harper') ? 'BR' : ''));
+        // Detectar se é edição brasileira/nacional pelo idioma, país ou editora
+        const isBr = (info.language === 'pt' || info.language === 'por' || item.saleInfo?.country === 'BR' || /darkside|harpercollins|intrínseca|companhia das letras|rocco|aleph|saraiva|record|summus|bienal/i.test(publisher));
+        const edition = getEditionInfo(isBr ? 'BR' : (info.language || 'en'));
         const formatType: 'Físico' | 'E-book' = item.accessInfo?.epub?.isAvailable || item.accessInfo?.pdf?.isAvailable ? 'E-book' : 'Físico';
 
         resultMap.set(uniqueKey, {
           id: item.id || 'gb_' + index + Math.random(),
-          title: title,
+          title: title + subtitle,
           authors: info.authors || ['Autor Desconhecido'],
-          pageCount: info.pageCount || Math.floor(Math.random() * 150) + 280,
+          pageCount: info.pageCount || Math.floor(Math.random() * 120) + 260,
           thumbnail: info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80',
           countryFlag: edition.flag,
           countryName: edition.name,
@@ -109,11 +124,12 @@ export default function Library() {
         });
       });
     } catch (err) {
-      console.warn("Google Books falhou:", err);
+      console.warn("Google Books BR falhou:", err);
     }
 
+    // Complemento Open Library com foco em português
     try {
-      const olRes = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=16`);
+      const olRes = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query + ' language:por')}&limit=15`);
       const olData = await olRes.json();
       if (olData.docs && olData.docs.length > 0) {
         olData.docs.forEach((doc: any, index: number) => {
@@ -141,7 +157,7 @@ export default function Library() {
         });
       }
     } catch (olErr) {
-      console.warn("Open Library falhou:", olErr);
+      console.warn("Open Library BR falhou:", olErr);
     }
 
     setApiResults(Array.from(resultMap.values()).slice(0, 24));
