@@ -67,7 +67,7 @@ export default function Library() {
     setBooks(storageService.getBooks()); 
   }, []);
 
-  // Buscador multicanal super-reforçado para catálogos nacionais (DarkSide, HarperCollins, Intrínseca, Companhia das Letras, etc.)
+  // Buscador global livre multicanal (Google Books + Open Library) com ampla cobertura internacional e nacional sem restrições
   const handleApiSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const query = apiQuery.trim();
@@ -78,37 +78,32 @@ export default function Library() {
     const resultMap = new Map<string, ApiBookResult>();
 
     try {
-      const [resBr, resDark, resHarper, resGlobal] = await Promise.all([
-        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query + ' lang:pt')}&maxResults=20`),
-        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query + ' darkside')}&maxResults=10`),
-        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query + ' harpercollins')}&maxResults=10`),
-        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=15`)
+      const [resGlobal, resSubject, resAuthor] = await Promise.all([
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=24`),
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent('subject:' + query)}&maxResults=12`),
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent('inauthor:' + query)}&maxResults=12`)
       ]);
-      const [dataBr, dataDark, dataHarper, dataGlobal] = await Promise.all([
-        resBr.json(), 
-        resDark.json(), 
-        resHarper.json(), 
-        resGlobal.json()
+      const [dataGlobal, dataSubject, dataAuthor] = await Promise.all([
+        resGlobal.json(), 
+        resSubject.json(), 
+        resAuthor.json()
       ]);
 
       const items = [
-        ...(dataBr.items || []), 
-        ...(dataDark.items || []), 
-        ...(dataHarper.items || []), 
-        ...(dataGlobal.items || [])
+        ...(dataGlobal.items || []), 
+        ...(dataSubject.items || []), 
+        ...(dataAuthor.items || [])
       ];
 
       items.forEach((item: any, index: number) => {
         const info = item.volumeInfo || {};
         const title = info.title || query;
-        const publisher = info.publisher || '';
+        const publisher = info.publisher || 'Editora Geral';
         const subtitle = info.subtitle ? ` - ${info.subtitle}` : '';
         const uniqueKey = (title + '_' + publisher).toLowerCase().trim();
         if (resultMap.has(uniqueKey)) return;
 
-        // Detectar se é edição brasileira/nacional pelo idioma, país ou editora
-        const isBr = (info.language === 'pt' || info.language === 'por' || item.saleInfo?.country === 'BR' || /darkside|harpercollins|intrínseca|companhia das letras|rocco|aleph|saraiva|record|summus|bienal/i.test(publisher));
-        const edition = getEditionInfo(isBr ? 'BR' : (info.language || 'en'));
+        const edition = getEditionInfo(info.language || 'en');
         const formatType: 'Físico' | 'E-book' = item.accessInfo?.epub?.isAvailable || item.accessInfo?.pdf?.isAvailable ? 'E-book' : 'Físico';
 
         resultMap.set(uniqueKey, {
@@ -124,21 +119,21 @@ export default function Library() {
         });
       });
     } catch (err) {
-      console.warn("Google Books BR falhou:", err);
+      console.warn("Google Books global falhou:", err);
     }
 
-    // Complemento Open Library com foco em português
+    // Complemento Open Library sem restrições
     try {
-      const olRes = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query + ' language:por')}&limit=15`);
+      const olRes = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=20`);
       const olData = await olRes.json();
       if (olData.docs && olData.docs.length > 0) {
         olData.docs.forEach((doc: any, index: number) => {
           const title = doc.title || query;
-          const publisher = doc.publisher?.[0] || '';
+          const publisher = doc.publisher?.[0] || 'Editora Aberta';
           const uniqueKey = (title + '_' + publisher).toLowerCase().trim();
           if (resultMap.has(uniqueKey)) return;
 
-          const edition = getEditionInfo('por');
+          const edition = getEditionInfo('en');
           const formatType: 'Físico' | 'E-book' = doc.ebook_access ? 'E-book' : 'Físico';
 
           resultMap.set(uniqueKey, {
@@ -157,10 +152,10 @@ export default function Library() {
         });
       }
     } catch (olErr) {
-      console.warn("Open Library BR falhou:", olErr);
+      console.warn("Open Library global falhou:", olErr);
     }
 
-    setApiResults(Array.from(resultMap.values()).slice(0, 24));
+    setApiResults(Array.from(resultMap.values()).slice(0, 28));
     setIsSearchingApi(false);
   };
 
