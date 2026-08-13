@@ -16,14 +16,14 @@ const CROP_SIZE = 300;
 type CropPosition = { x: number; y: number };
 type MedalRule = { id: string; label: string; description: string; icon: typeof Medal; metric: 'books' | 'hours'; target: number; tone: string };
 
-type CompanionOption = { id: string; label: string; role: string; description: string; symbol: string; reaction: string; styleClass: string };
+type CompanionOption = { id: string; label: string; role: string; description: string; symbol: string; reaction: string; styleClass: string; imageUrl: string };
 
 const COMPANIONS: CompanionOption[] = [
-  { id: 'owl', label: 'Coruja Arcana', role: 'Vigia dos Manuscritos', description: 'Atenta aos detalhes, zela pelas anotações e páginas lidas com sabedoria milenar.', symbol: '🦉', reaction: '"Hoo... excelentes anotações hoje!"', styleClass: 'type-owl' },
-  { id: 'dragon', label: 'Draconídeo das Chamas', role: 'Guardião dos Tomos', description: 'Protege os arquivos mais raros e mantém acesa a chama da sua sequência diária.', symbol: '🐉', reaction: '"A chama da leitura arde forte!"', styleClass: 'type-dragon' },
-  { id: 'fox', label: 'Raposa das Brumas', role: 'Exploradora de Estantes', description: 'Ágil e curiosa, guia você por atalhos secretos entre as coleções da biblioteca.', symbol: '🦊', reaction: '"Encontrei um tomo raro para ti!"', styleClass: 'type-fox' },
-  { id: 'griffin', label: 'Grifo Alado', role: 'Sentinela dos Céus', description: 'Elevado acima das dúvidas, inspira metas ambiciosas e jornadas épicas.', symbol: '🦅', reaction: '"Voemos rumo a novas metas!"', styleClass: 'type-griffin' },
-  { id: 'cat', label: 'Gato de Luz', role: 'Connoisseur de Silêncio', description: 'Compreende o ritmo do descanso e celebra cada momento de leitura sossegada.', symbol: '🐈', reaction: '"Purr... hora de um bom capítulo."', styleClass: 'type-cat' },
+  { id: 'owl', label: 'Coruja Branca', role: 'Mensageira dos Tomos', description: 'Inspirada em corujas mensageiras de plumas alvas, zela pelas suas leituras com sabedoria milenar.', symbol: '🦉', reaction: '"Hoo... uma nova mensagem nas páginas!"', styleClass: 'type-owl', imageUrl: '/manus-storage/companion_owl_white_dcaca8de.png' },
+  { id: 'dragon', label: 'Dragão Vermelho', role: 'Guardião das Chamas', description: 'Um imponente dragão vermelho de escamas rubis que protege a chama da sua sequência diária.', symbol: '🐉', reaction: '"A chama da leitura arde em brasa!"', styleClass: 'type-dragon', imageUrl: '/manus-storage/companion_dragon_red_c1f86b7e.png' },
+  { id: 'cat', label: 'Gatinha Tricolor', role: 'Musa dos Manuscritos', description: 'Uma charmosa gatinha tricolor de tons laranjas, pretos e brancos que traz aconchego à estante.', symbol: '🐈', reaction: '"Ronrom... hora de abrir um bom livro."', styleClass: 'type-cat', imageUrl: '/manus-storage/companion_cat_tricolor_8ee4411f.png' },
+  { id: 'fox', label: 'Raposa das Brumas', role: 'Exploradora de Estantes', description: 'Ágil e curiosa, guia você por atalhos secretos entre as coleções da biblioteca.', symbol: '🦊', reaction: '"Encontrei um tomo raro para ti!"', styleClass: 'type-fox', imageUrl: '/manus-storage/companion_fox_mist_175d62cf.png' },
+  { id: 'griffin', label: 'Grifo Dourado', role: 'Sentinela dos Céus', description: 'Elevado acima das dúvidas, inspira metas ambiciosas e jornadas épicas.', symbol: '🦅', reaction: '"Voemos rumo a novas metas!"', styleClass: 'type-griffin', imageUrl: '/manus-storage/companion_griffin_gold_671cc5fd.png' },
 ];
 
 const MEDAL_RULES: MedalRule[] = [
@@ -415,8 +415,8 @@ export default function Profile() {
                   const currentComp = COMPANIONS.find(c => c.id === (savedProfile.companionId || 'owl')) || COMPANIONS[0];
                   return (
                     <div className="companion-3d-stage relative" title={`Guardião: ${currentComp.label}`}>
-                      <div className={`companion-3d-orb ${currentComp.styleClass}`}>
-                        <span className="companion-3d-symbol">{currentComp.symbol}</span>
+                      <div className={`companion-3d-orb ${currentComp.styleClass} overflow-hidden flex items-center justify-center p-1`}>
+                        <img src={currentComp.imageUrl} alt={currentComp.label} className="w-full h-full object-cover rounded-full drop-shadow-md" />
                       </div>
                       <div className="companion-speech-bubble">{currentComp.reaction}</div>
                     </div>
