@@ -16,14 +16,14 @@ const CROP_SIZE = 300;
 type CropPosition = { x: number; y: number };
 type MedalRule = { id: string; label: string; description: string; icon: typeof Medal; metric: 'books' | 'hours'; target: number; tone: string };
 
-type CompanionOption = { id: string; label: string; role: string; description: string; symbol: string };
+type CompanionOption = { id: string; label: string; role: string; description: string; symbol: string; reaction: string; styleClass: string };
 
 const COMPANIONS: CompanionOption[] = [
-  { id: 'owl', label: 'Coruja Arcana', role: 'Vigia dos Manuscritos', description: 'Atenta aos detalhes, zela pelas anotações e páginas lidas com sabedoria milenar.', symbol: '🦉' },
-  { id: 'dragon', label: 'Draconídeo das Chamas', role: 'Guardião dos Tomos', description: 'Protege os arquivos mais raros e mantém acesa a chama da sua sequência diária.', symbol: '🐉' },
-  { id: 'fox', label: 'Raposa das Brumas', role: 'Exploradora de Estantes', description: 'Ágil e curiosa, guia você por atalhos secretos entre as coleções da biblioteca.', symbol: '🦊' },
-  { id: 'griffin', label: 'Grifo Alado', role: 'Sentinela dos Céus', description: 'Elevado acima das dúvidas, inspira metas ambiciosas e jornadas épicas.', symbol: '🦅' },
-  { id: 'cat', label: 'Gato de Luz', role: 'Connoisseur de Silêncio', description: 'Compreende o ritmo do descanso e celebra cada momento de leitura sossegada.', symbol: '🐈' },
+  { id: 'owl', label: 'Coruja Arcana', role: 'Vigia dos Manuscritos', description: 'Atenta aos detalhes, zela pelas anotações e páginas lidas com sabedoria milenar.', symbol: '🦉', reaction: '"Hoo... excelentes anotações hoje!"', styleClass: 'type-owl' },
+  { id: 'dragon', label: 'Draconídeo das Chamas', role: 'Guardião dos Tomos', description: 'Protege os arquivos mais raros e mantém acesa a chama da sua sequência diária.', symbol: '🐉', reaction: '"A chama da leitura arde forte!"', styleClass: 'type-dragon' },
+  { id: 'fox', label: 'Raposa das Brumas', role: 'Exploradora de Estantes', description: 'Ágil e curiosa, guia você por atalhos secretos entre as coleções da biblioteca.', symbol: '🦊', reaction: '"Encontrei um tomo raro para ti!"', styleClass: 'type-fox' },
+  { id: 'griffin', label: 'Grifo Alado', role: 'Sentinela dos Céus', description: 'Elevado acima das dúvidas, inspira metas ambiciosas e jornadas épicas.', symbol: '🦅', reaction: '"Voemos rumo a novas metas!"', styleClass: 'type-griffin' },
+  { id: 'cat', label: 'Gato de Luz', role: 'Connoisseur de Silêncio', description: 'Compreende o ritmo do descanso e celebra cada momento de leitura sossegada.', symbol: '🐈', reaction: '"Purr... hora de um bom capítulo."', styleClass: 'type-cat' },
 ];
 
 const MEDAL_RULES: MedalRule[] = [
@@ -411,11 +411,17 @@ export default function Profile() {
               </div>
               <div className="min-w-0 flex-1 text-center md:text-left"><p className="eyebrow">Seu retrato na Vortex</p><h2 className="mt-1 text-4xl font-serif">{savedProfile.displayName}</h2><p className="mt-2 max-w-2xl text-muted-foreground">{savedProfile.bio}</p><button type="button" className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-[.16em] text-[#caa85e] hover:text-primary transition-colors wand-click" onClick={openAvatarPicker}><ImagePlus className="h-4 w-4" /> Recortar e ajustar retrato</button></div>
               <div className="flex items-center gap-4 justify-center md:justify-end">
-                <div className="companion-3d-stage" title={`Guardião: ${COMPANIONS.find(c => c.id === (savedProfile.companionId || 'owl'))?.label || 'Coruja Arcana'}`}>
-                  <div className="companion-3d-orb">
-                    <span className="companion-3d-symbol">{COMPANIONS.find(c => c.id === (savedProfile.companionId || 'owl'))?.symbol || '🦉'}</span>
-                  </div>
-                </div>
+                {(() => {
+                  const currentComp = COMPANIONS.find(c => c.id === (savedProfile.companionId || 'owl')) || COMPANIONS[0];
+                  return (
+                    <div className="companion-3d-stage relative" title={`Guardião: ${currentComp.label}`}>
+                      <div className={`companion-3d-orb ${currentComp.styleClass}`}>
+                        <span className="companion-3d-symbol">{currentComp.symbol}</span>
+                      </div>
+                      <div className="companion-speech-bubble">{currentComp.reaction}</div>
+                    </div>
+                  );
+                })()}
                 {(favoriteRegularMedal || favoriteStreakMedal) && (
                   <div className="favorite-medal-highlight" title="Medalha favorita">
                     <div className="favorite-medal-icon">
