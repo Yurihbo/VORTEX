@@ -16,6 +16,16 @@ const CROP_SIZE = 300;
 type CropPosition = { x: number; y: number };
 type MedalRule = { id: string; label: string; description: string; icon: typeof Medal; metric: 'books' | 'hours'; target: number; tone: string };
 
+type CompanionOption = { id: string; label: string; role: string; description: string; symbol: string };
+
+const COMPANIONS: CompanionOption[] = [
+  { id: 'owl', label: 'Coruja Arcana', role: 'Vigia dos Manuscritos', description: 'Atenta aos detalhes, zela pelas anotações e páginas lidas com sabedoria milenar.', symbol: '🦉' },
+  { id: 'dragon', label: 'Draconídeo das Chamas', role: 'Guardião dos Tomos', description: 'Protege os arquivos mais raros e mantém acesa a chama da sua sequência diária.', symbol: '🐉' },
+  { id: 'fox', label: 'Raposa das Brumas', role: 'Exploradora de Estantes', description: 'Ágil e curiosa, guia você por atalhos secretos entre as coleções da biblioteca.', symbol: '🦊' },
+  { id: 'griffin', label: 'Grifo Alado', role: 'Sentinela dos Céus', description: 'Elevado acima das dúvidas, inspira metas ambiciosas e jornadas épicas.', symbol: '🦅' },
+  { id: 'cat', label: 'Gato de Luz', role: 'Connoisseur de Silêncio', description: 'Compreende o ritmo do descanso e celebra cada momento de leitura sossegada.', symbol: '🐈' },
+];
+
 const MEDAL_RULES: MedalRule[] = [
   { id: 'first-tome', label: 'Primeiro Selo', description: 'Conclua seu primeiro tomo.', icon: BookMarked, metric: 'books', target: 1, tone: 'gold' },
   { id: 'five-tomes', label: 'Guardião dos Cinco', description: 'Conclua cinco livros.', icon: Medal, metric: 'books', target: 5, tone: 'blue' },
@@ -400,7 +410,21 @@ export default function Profile() {
                 <input ref={avatarRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={handleAvatarUpload} />
               </div>
               <div className="min-w-0 flex-1 text-center md:text-left"><p className="eyebrow">Seu retrato na Vortex</p><h2 className="mt-1 text-4xl font-serif">{savedProfile.displayName}</h2><p className="mt-2 max-w-2xl text-muted-foreground">{savedProfile.bio}</p><button type="button" className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-[.16em] text-[#caa85e] hover:text-primary transition-colors wand-click" onClick={openAvatarPicker}><ImagePlus className="h-4 w-4" /> Recortar e ajustar retrato</button></div>
-              {(favoriteRegularMedal || favoriteStreakMedal) && <div className="favorite-medal-highlight" title="Medalha favorita"><div className="favorite-medal-icon">{FavoriteMedalIcon ? <FavoriteMedalIcon className="h-7 w-7" /> : <span>{favoriteStreakMedal?.icon}</span>}</div><span className="favorite-medal-label">{favoriteRegularMedal?.label || favoriteStreakMedal?.label}</span></div>}
+              <div className="flex items-center gap-4 justify-center md:justify-end">
+                <div className="companion-3d-stage" title={`Guardião: ${COMPANIONS.find(c => c.id === (savedProfile.companionId || 'owl'))?.label || 'Coruja Arcana'}`}>
+                  <div className="companion-3d-orb">
+                    <span className="companion-3d-symbol">{COMPANIONS.find(c => c.id === (savedProfile.companionId || 'owl'))?.symbol || '🦉'}</span>
+                  </div>
+                </div>
+                {(favoriteRegularMedal || favoriteStreakMedal) && (
+                  <div className="favorite-medal-highlight" title="Medalha favorita">
+                    <div className="favorite-medal-icon">
+                      {FavoriteMedalIcon ? <FavoriteMedalIcon className="h-7 w-7" /> : <span>{favoriteStreakMedal?.icon}</span>}
+                    </div>
+                    <span className="favorite-medal-label">{favoriteRegularMedal?.label || favoriteStreakMedal?.label}</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4"><div className="profile-stat"><BookHeart className="h-4 w-4 text-primary" /><strong>{books.length}</strong><span>Livros na coleção</span></div><div className="profile-stat"><Sparkles className="h-4 w-4 text-[#caa85e]" /><strong>{completed}</strong><span>Livros já lidos</span></div><div className="profile-stat"><Clock3 className="h-4 w-4 text-primary" /><strong>{savedProfile.totalReadingHours}h</strong><span>Horas lidas</span></div><div className="profile-stat"><Shield className="h-4 w-4 text-[#caa85e]" /><strong>{unlockedMedals}</strong><span>Medalhas</span></div></div>
           </Card>
@@ -422,6 +446,43 @@ export default function Profile() {
         <Card className="vortex-card p-6 md:p-7"><div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Salão das medalhas</p><h2 className="mt-1 text-3xl font-serif">Marcos da sua jornada</h2><p className="mt-2 text-sm text-muted-foreground">Cada medalha é calculada pelos livros concluídos, pelas horas registradas e pela constância da sua chama.</p></div><div className="medal-counter"><Medal className="h-4 w-4" /> {unlockedMedals + unlockedStreakMedals}/{MEDAL_RULES.length + STREAK_MILESTONES.length} desbloqueadas</div></div><div className="medal-grid">{MEDAL_RULES.map(rule => { const progress = medalProgress(rule, completed, savedProfile.totalReadingHours); const Icon = rule.icon; return <div key={rule.id} className={`medal-card ${progress.unlocked ? 'is-unlocked' : ''} tone-${rule.tone}`}><div className="medal-icon"><Icon className="h-6 w-6" /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><h3 className="font-serif text-xl leading-none">{rule.label}</h3><p className="mt-1 text-xs text-muted-foreground">{rule.description}</p></div>{progress.unlocked && <span className="medal-status">Conquistada</span>}</div><div className="medal-progress" aria-label={`${progress.current} de ${rule.target} ${rule.metric === 'books' ? 'livros' : 'horas'}`}><span style={{ width: `${progress.percentage}%` }} /></div><div className="mt-1 flex justify-between text-[.65rem] uppercase tracking-[.1em] text-muted-foreground"><span>{progress.current} {rule.metric === 'books' ? 'livros' : 'horas'}</span><span>{rule.target} {rule.metric === 'books' ? 'livros' : 'horas'}</span></div><button type="button" disabled={!progress.unlocked} onClick={() => chooseFavoriteMedal(rule.id)} className={`medal-favorite-button ${savedProfile.favoriteMedalId === rule.id ? 'is-favorite' : ''}`}><Check className="h-3 w-3" /> {savedProfile.favoriteMedalId === rule.id ? 'Favorita' : progress.unlocked ? 'Destacar' : 'Bloqueada'}</button></div></div>; })}</div>{nextMedal && <div className="next-medal-note"><Sparkles className="h-4 w-4 text-[#caa85e]" /><span>Próximo marco: <strong>{nextMedal.label}</strong> — faltam {Math.max(0, nextMedal.target - (nextMedal.metric === 'books' ? completed : savedProfile.totalReadingHours))} {nextMedal.metric === 'books' ? 'livros' : 'horas'}.</span></div>}<div className="streak-medal-section"><div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Medalhas de constância</p><h3 className="mt-1 text-2xl font-serif">A chama da leitura</h3><p className="mt-1 text-sm text-muted-foreground">Sequência atual: {streak.currentStreak} dias · melhor marca: {streak.bestStreak} dias.</p></div><div className="streak-flame"><Flame className="h-4 w-4" /> {unlockedStreakMedals}/{STREAK_MILESTONES.length}</div></div><div className="medal-grid mt-4">{STREAK_MILESTONES.map(rule => { const progress = streakProgress(rule, streak.currentStreak, streak.bestStreak); return <div key={rule.id} className={`medal-card ${progress.unlocked ? 'is-unlocked' : ''} tone-${rule.tone}`}><div className="medal-icon streak-medal-symbol">{rule.icon}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><h4 className="font-serif text-xl leading-none">{rule.label}</h4><p className="mt-1 text-xs text-muted-foreground">{rule.description}</p></div>{progress.unlocked && <span className="medal-status">Conquistada</span>}</div><div className="medal-progress" aria-label={`${progress.best} de ${rule.days} dias`}><span style={{ width: `${progress.percentage}%` }} /></div><div className="mt-1 flex justify-between text-[.65rem] uppercase tracking-[.1em] text-muted-foreground"><span>Melhor: {progress.best}</span><span>Meta: {rule.days}</span></div><button type="button" disabled={!progress.unlocked} onClick={() => chooseFavoriteMedal(rule.id)} className={`medal-favorite-button ${savedProfile.favoriteMedalId === rule.id ? 'is-favorite' : ''}`}><Check className="h-3 w-3" /> {savedProfile.favoriteMedalId === rule.id ? 'Favorita' : progress.unlocked ? 'Destacar' : 'Bloqueada'}</button></div></div>; })}</div></div></Card>
 
         <Card className="vortex-card achievement-share-card p-6 md:p-7"><div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between"><div><p className="eyebrow">Cartão de conquistas</p><h2 className="mt-1 text-3xl font-serif">Leve sua jornada para além da biblioteca</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Gere uma imagem com seus marcos, medalhas e sequência para compartilhar nas redes sociais.</p></div><div className="achievement-share-mark"><Medal className="h-8 w-8" /><span>{unlockedMedals + unlockedStreakMedals}</span></div></div><div className="achievement-share-preview"><div><span className="share-preview-label">VORTEX · CONQUISTAS</span><strong>{savedProfile.displayName || 'Leitor Vortex'}</strong><p>{completed} livros · {savedProfile.totalReadingHours}h · {streak.currentStreak} dias de chama</p></div><div className="share-preview-glyph">✦</div></div><div className="flex flex-wrap gap-3"><Button type="button" className="wand-click" onClick={shareAchievements}><Share2 className="mr-2 h-4 w-4" /> Compartilhar cartão</Button><Button type="button" variant="outline" className="wand-click" onClick={copyAchievementText}><Copy className="mr-2 h-4 w-4" /> Copiar resumo</Button><p className="flex basis-full items-center gap-2 text-xs text-muted-foreground"><FileDown className="h-3.5 w-3.5" /> Em computadores sem compartilhamento nativo, o cartão PNG é baixado automaticamente.</p></div></Card>
+
+        <Card className="vortex-card p-6 md:p-7">
+          <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="eyebrow">Guardião simbólico</p>
+              <h2 className="mt-1 text-3xl font-serif">Seu companheiro na biblioteca</h2>
+              <p className="mt-2 text-sm text-muted-foreground">Escolha a criatura arcana que acompanhará sua jornada e testemunhará suas leituras.</p>
+            </div>
+            <div className="companion-badge-pill">
+              <span>{COMPANIONS.find(c => c.id === (profile.companionId || 'owl'))?.symbol || '🦉'}</span>
+              <span>{COMPANIONS.find(c => c.id === (profile.companionId || 'owl'))?.label || 'Coruja Arcana'}</span>
+            </div>
+          </div>
+          <div className="companion-grid">
+            {COMPANIONS.map(comp => {
+              const selected = (profile.companionId || 'owl') === comp.id;
+              return (
+                <button
+                  key={comp.id}
+                  type="button"
+                  onClick={() => update('companionId', comp.id)}
+                  className={`companion-card wand-click ${selected ? 'is-selected' : ''}`}
+                >
+                  <div className="companion-icon-box text-2xl">{comp.symbol}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <h3 className="font-serif text-lg leading-tight">{comp.label}</h3>
+                      {selected && <Check className="h-4 w-4 text-[#caa85e] shrink-0" />}
+                    </div>
+                    <p className="mt-0.5 text-xs text-[#caa85e] font-medium">{comp.role}</p>
+                    <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">{comp.description}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
 
         <Card className="vortex-card p-6 md:p-7"><div className="mb-5"><p className="eyebrow">Registro de memórias</p><h2 className="mt-1 text-3xl font-serif">Suas escolhas em destaque</h2></div><div className="grid gap-3 md:grid-cols-3"><div className="preference-card"><BookHeart className="h-5 w-5 text-primary" /><span>Leitura favorita</span><strong>{favoriteBook?.title || 'Ainda não definida'}</strong></div><div className="preference-card"><Sword className="h-5 w-5 text-[#caa85e]" /><span>Personagem favorito</span><strong>{savedProfile.favoriteCharacter || 'Ainda não definido'}</strong></div><div className="preference-card"><Skull className="h-5 w-5 text-rose-300" /><span>Vilão favorito</span><strong>{savedProfile.favoriteVillain || 'Ainda não definido'}</strong></div></div></Card>
 

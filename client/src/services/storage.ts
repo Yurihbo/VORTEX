@@ -18,6 +18,7 @@ const DEFAULT_PROFILE: UserProfile = {
   favoriteCharacter: '',
   favoriteVillain: '',
   favoriteMedalId: undefined,
+  companionId: 'owl',
 };
 const DEFAULT_REMINDER: ReadingReminderSettings = {
   enabled: false,
@@ -187,6 +188,7 @@ export const storageService = {
         favoriteBook: typeof stored.favoriteBook === 'string' ? stored.favoriteBook : '',
         favoriteCharacter: typeof stored.favoriteCharacter === 'string' ? stored.favoriteCharacter : '',
         favoriteVillain: typeof stored.favoriteVillain === 'string' ? stored.favoriteVillain : '',
+        companionId: typeof stored.companionId === 'string' ? stored.companionId : 'owl',
       };
 
     } catch {
