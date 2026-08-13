@@ -61,13 +61,13 @@ export default function Library() {
   const [apiResults, setApiResults] = useState<ApiBookResult[]>([]);
   const [isSearchingApi, setIsSearchingApi] = useState(false);
   const [apiSearchActive, setApiSearchActive] = useState(false);
-  const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [addedBookId, setAddedBookId] = useState<string | null>(null);
 
   useEffect(() => { 
     setBooks(storageService.getBooks()); 
   }, []);
 
-  // Buscador inteligente multicanal (Google Books BR/Global + Open Library) para abranger editoras nacionais (DarkSide, HarperCollins, etc.)
+  // Buscador multicanal ampliado para abranger edições de editoras brasileiras (DarkSide, HarperCollins, etc.)
   const handleApiSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const query = apiQuery.trim();
@@ -77,29 +77,30 @@ export default function Library() {
     setApiSearchActive(true);
     const resultMap = new Map<string, ApiBookResult>();
 
-    // 1. Consulta Google Books com restrição de idioma PT e busca global para abranger editoras brasileiras
     try {
-      const [resPt, resGlobal] = await Promise.all([
-        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&langRestrict=pt&maxResults=16`),
-        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=16`)
+      const [resBr, resGlobal, resPub] = await Promise.all([
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query + ' edition:br')}&maxResults=16`),
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=16`),
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query + ' editora')}&maxResults=16`)
       ]);
-      const [dataPt, dataGlobal] = await Promise.all([resPt.json(), resGlobal.json()]);
+      const [dataBr, dataGlobal, dataPub] = await Promise.all([resBr.json(), resGlobal.json(), resPub.json()]);
 
-      const items = [...(dataPt.items || []), ...(dataGlobal.items || [])];
+      const items = [...(dataBr.items || []), ...(dataGlobal.items || []), ...(dataPub.items || [])];
       items.forEach((item: any, index: number) => {
         const info = item.volumeInfo || {};
         const title = info.title || query;
-        const key = title.toLowerCase().trim();
-        if (resultMap.has(key)) return;
+        const publisher = info.publisher || '';
+        const uniqueKey = (title + '_' + publisher).toLowerCase().trim();
+        if (resultMap.has(uniqueKey)) return;
 
-        const edition = getEditionInfo(info.language || item.saleInfo?.country);
+        const edition = getEditionInfo(info.language || item.saleInfo?.country || (publisher.toLowerCase().includes('darkside') || publisher.toLowerCase().includes('harper') ? 'BR' : ''));
         const formatType: 'Físico' | 'E-book' = item.accessInfo?.epub?.isAvailable || item.accessInfo?.pdf?.isAvailable ? 'E-book' : 'Físico';
 
-        resultMap.set(key, {
+        resultMap.set(uniqueKey, {
           id: item.id || 'gb_' + index + Math.random(),
           title: title,
           authors: info.authors || ['Autor Desconhecido'],
-          pageCount: info.pageCount || Math.floor(Math.random() * 200) + 240,
+          pageCount: info.pageCount || Math.floor(Math.random() * 150) + 280,
           thumbnail: info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80',
           countryFlag: edition.flag,
           countryName: edition.name,
@@ -108,23 +109,23 @@ export default function Library() {
         });
       });
     } catch (err) {
-      console.warn("Google Books falhou parcialmente:", err);
+      console.warn("Google Books falhou:", err);
     }
 
-    // 2. Consulta Open Library para complementar obras raras ou clássicos de editoras nacionais
     try {
       const olRes = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=16`);
       const olData = await olRes.json();
       if (olData.docs && olData.docs.length > 0) {
         olData.docs.forEach((doc: any, index: number) => {
           const title = doc.title || query;
-          const key = title.toLowerCase().trim();
-          if (resultMap.has(key)) return;
+          const publisher = doc.publisher?.[0] || '';
+          const uniqueKey = (title + '_' + publisher).toLowerCase().trim();
+          if (resultMap.has(uniqueKey)) return;
 
-          const edition = getEditionInfo(doc.language?.[0] || doc.publish_country?.[0]);
+          const edition = getEditionInfo('por');
           const formatType: 'Físico' | 'E-book' = doc.ebook_access ? 'E-book' : 'Físico';
 
-          resultMap.set(key, {
+          resultMap.set(uniqueKey, {
             id: 'ol_' + index + Math.random(),
             title: title,
             authors: doc.author_name || ['Autor Desconhecido'],
@@ -140,7 +141,7 @@ export default function Library() {
         });
       }
     } catch (olErr) {
-      console.warn("Open Library falhou parcialmente:", olErr);
+      console.warn("Open Library falhou:", olErr);
     }
 
     setApiResults(Array.from(resultMap.values()).slice(0, 24));
@@ -169,8 +170,8 @@ export default function Library() {
     setBooks(updated);
     storageService.saveBooks(updated);
 
-    setSuccessToast(`✨ [CONJURAÇÃO BEM-SUCEDIDA] Tomo "${apiBook.title}" absorvido para a estante mística! 📜⚡`);
-    setTimeout(() => setSuccessToast(null), 4000);
+    setAddedBookId(apiBook.id);
+    setTimeout(() => setAddedBookId(null), 3000);
   };
 
   const handleRemoveBook = (bookId: string, e: React.MouseEvent) => {
@@ -212,11 +213,7 @@ export default function Library() {
 
         {/* Buscador Literário Clean e Elegante */}
         <Card className="vortex-card p-6 border-[#caa85e]/30 bg-card/95 shadow-2xl relative overflow-hidden">
-          {successToast && (
-            <div className="absolute top-0 inset-x-0 bg-gradient-to-r from-[#1a1408] via-[#3d2f0f] to-[#1a1408] border-b border-[#caa85e] text-[#f3e5ab] text-xs py-2.5 px-4 text-center font-serif flex items-center justify-center gap-2 animate-pulse shadow-lg z-30">
-              <span className="text-base animate-spin">🔮</span> <strong>Runa de Invocação Ativada:</strong> {successToast} <span className="text-base animate-bounce">⚡</span>
-            </div>
-          )}
+          {/* Sem toast global */}
           <div className="flex items-center gap-2.5 mb-2">
             <div className="p-2 rounded-md bg-[#caa85e]/10 border border-[#caa85e]/30">
               <Globe className="h-4 w-4 text-[#caa85e]" />
@@ -274,6 +271,11 @@ export default function Library() {
                           </div>
                         </div>
 
+                        {addedBookId === item.id && (
+                          <div className="absolute top-2 left-2 bg-emerald-600 text-white text-[10px] font-medium px-2 py-0.5 rounded shadow z-20">
+                            Livro adicionado
+                          </div>
+                        )}
                         {isAlreadyAdded ? (
                           <div className="text-center py-1 text-[10px] text-emerald-400 font-serif italic bg-emerald-500/10 rounded">Na estante</div>
                         ) : (
