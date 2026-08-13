@@ -77,6 +77,7 @@ export interface UserProfile {
   favoriteVillain: string;
   favoriteMedalId?: string;
   companionId?: string;
+  companionNames?: Record<string, string>;
 }
 
 export interface ReadingReminderSettings {

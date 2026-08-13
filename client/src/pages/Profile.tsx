@@ -19,11 +19,11 @@ type MedalRule = { id: string; label: string; description: string; icon: typeof 
 type CompanionOption = { id: string; label: string; role: string; description: string; symbol: string; reaction: string; styleClass: string; imageUrl: string };
 
 const COMPANIONS: CompanionOption[] = [
-  { id: 'owl', label: 'Coruja Branca', role: 'Mensageira dos Tomos', description: 'Inspirada em corujas mensageiras de plumas alvas, zela pelas suas leituras com sabedoria milenar.', symbol: '🦉', reaction: '"Hoo... uma nova mensagem nas páginas!"', styleClass: 'type-owl', imageUrl: '/manus-storage/icon_owl_white_f1b45cdb.png' },
-  { id: 'dragon', label: 'Dragão Vermelho', role: 'Guardião das Chamas', description: 'Um imponente dragão vermelho de escamas rubis que protege a chama da sua sequência diária.', symbol: '🐉', reaction: '"A chama da leitura arde em brasa!"', styleClass: 'type-dragon', imageUrl: '/manus-storage/icon_dragon_red_5a432cdb.png' },
-  { id: 'fox', label: 'Raposa Espectro', role: 'Exploradora de Estantes', description: 'Uma raposa espectral com aura etérea e prateada que guia você por atalhos secretos.', symbol: '🦊', reaction: '"Encontrei um tomo raro para ti!"', styleClass: 'type-fox', imageUrl: '/manus-storage/icon_fox_specter_7d2fa191.png' },
-  { id: 'hippogriff', label: 'Hipogrifo', role: 'Sentinela dos Céus', description: 'Majestoso hipogrifo com cabeça de águia e corpo magnífico que inspira jornadas épicas.', symbol: '🦅', reaction: '"Voemos rumo a novas metas!"', styleClass: 'type-griffin', imageUrl: '/manus-storage/icon_hippogriff_f4916d80.png' },
-  { id: 'cat', label: 'Gatinha Tricolor', role: 'Musa dos Manuscritos', description: 'Uma charmosa gatinha tricolor de tons laranjas, pretos e brancos que traz aconchego à estante.', symbol: '🐈', reaction: '"Ronrom... hora de abrir um bom livro."', styleClass: 'type-cat', imageUrl: '/manus-storage/icon_cat_calico_2eae7c9f.png' },
+  { id: 'owl', label: 'Coruja das Neves', role: 'Mensageira dos Tomos', description: 'A guardiã branca dos arquivos, com olhos âmbar e sabedoria para encontrar páginas esquecidas.', symbol: '🦉', reaction: '"As páginas sussurram uma nova mensagem."', styleClass: 'type-owl', imageUrl: '/manus-storage/companion_coruja_neves_user_f6ff69f6.png' },
+  { id: 'dragon', label: 'Dragão Vermelho', role: 'Guardião das Chamas', description: 'O protetor rubro do acervo, envolto em runas de fogo e pronto para aquecer sua sequência.', symbol: '🐉', reaction: '"A chama da leitura arde em brasa!"', styleClass: 'type-dragon', imageUrl: '/manus-storage/companion_dragao_vermelho_user_59b1514b.png' },
+  { id: 'fox', label: 'Raposa Patrono', role: 'Exploradora de Estantes', description: 'Um espírito azul-prateado que atravessa a névoa e revela atalhos entre suas coleções.', symbol: '🦊', reaction: '"Encontrei um tomo raro para ti."', styleClass: 'type-fox', imageUrl: '/manus-storage/companion_raposa_patrono_user_7b198e1e.png' },
+  { id: 'hippogriff', label: 'Hipogrifo', role: 'Sentinela dos Céus', description: 'A sentinela alada do santuário, nobre e vigilante sobre cada nova meta de leitura.', symbol: '🦅', reaction: '"Erga os olhos: há novas jornadas além das estantes."', styleClass: 'type-griffin', imageUrl: '/manus-storage/companion_hippogrifo_user_a0ebb1f8.png' },
+  { id: 'cat', label: 'Gatinha Tricolor', role: 'Musa dos Manuscritos', description: 'Uma guardiã de pelagem laranja, preta e branca que transforma cada sessão em aconchego.', symbol: '🐈', reaction: '"Ronrom... escolha uma história para aquecer a noite."', styleClass: 'type-cat', imageUrl: '/manus-storage/companion_gatinha_tricolor_user_909a5ad3.png' },
 ];
 
 const MEDAL_RULES: MedalRule[] = [
@@ -76,6 +76,13 @@ function getFavoriteBook(books: Book[], selected: string) {
 function medalProgress(rule: MedalRule, booksRead: number, hoursRead: number) {
   const current = rule.metric === 'books' ? booksRead : hoursRead;
   return { current, percentage: Math.min(100, Math.round((current / rule.target) * 100)), unlocked: current >= rule.target };
+}
+
+function normalizeCompanionNames(names?: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(COMPANIONS.map(companion => {
+    const customName = names?.[companion.id]?.trim().slice(0, 32) || companion.label;
+    return [companion.id, customName];
+  }));
 }
 
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
@@ -187,6 +194,8 @@ export default function Profile() {
   const favoriteRegularMedal = MEDAL_RULES.find(rule => rule.id === savedProfile.favoriteMedalId && medalProgress(rule, completed, savedProfile.totalReadingHours).unlocked);
   const favoriteStreakMedal = STREAK_MILESTONES.find(rule => rule.id === savedProfile.favoriteMedalId && streakProgress(rule, streak.currentStreak, streak.bestStreak).unlocked);
   const FavoriteMedalIcon = favoriteRegularMedal?.icon;
+  const selectedCompanion = COMPANIONS.find(companion => companion.id === (profile.companionId || 'owl')) || COMPANIONS[0];
+  const selectedCompanionName = profile.companionNames?.[selectedCompanion.id]?.trim() || selectedCompanion.label;
 
   useEffect(() => {
     const refreshStreak = () => setStreak(storageService.getReadingStreak());
@@ -196,6 +205,10 @@ export default function Profile() {
 
   function update<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
     setProfile(current => ({ ...current, [key]: value }));
+  }
+
+  function updateCompanionName(id: string, value: string) {
+    setProfile(current => ({ ...current, companionNames: { ...current.companionNames, [id]: value.slice(0, 32) } }));
   }
 
   function persistReminderSettings(next: ReadingReminderSettings) {
@@ -318,6 +331,7 @@ export default function Profile() {
       favoriteBook: profile.favoriteBook.trim(),
       favoriteCharacter: profile.favoriteCharacter.trim(),
       favoriteVillain: profile.favoriteVillain.trim(),
+      companionNames: normalizeCompanionNames(profile.companionNames),
     };
     storageService.saveUserProfile(nextProfile);
     setProfile(nextProfile);
@@ -411,17 +425,14 @@ export default function Profile() {
               </div>
               <div className="min-w-0 flex-1 text-center md:text-left"><p className="eyebrow">Seu retrato na Vortex</p><h2 className="mt-1 text-4xl font-serif">{savedProfile.displayName}</h2><p className="mt-2 max-w-2xl text-muted-foreground">{savedProfile.bio}</p><button type="button" className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-[.16em] text-[#caa85e] hover:text-primary transition-colors wand-click" onClick={openAvatarPicker}><ImagePlus className="h-4 w-4" /> Recortar e ajustar retrato</button></div>
               <div className="flex items-center gap-4 justify-center md:justify-end">
-                {(() => {
-                  const currentComp = COMPANIONS.find(c => c.id === (savedProfile.companionId || 'owl')) || COMPANIONS[0];
-                  return (
-                    <div className="companion-3d-stage relative" title={`Guardião: ${currentComp.label}`}>
-                      <div className={`companion-3d-orb ${currentComp.styleClass} overflow-hidden flex items-center justify-center p-1`}>
-                        <img src={currentComp.imageUrl} alt={currentComp.label} className="w-full h-full object-cover rounded-full drop-shadow-md" />
-                      </div>
-                      <div className="companion-speech-bubble">{currentComp.reaction}</div>
-                    </div>
-                  );
-                })()}
+                <div className="companion-3d-stage relative" tabIndex={0} aria-label={`Companheiro ${selectedCompanionName}`} title={`Guardião: ${selectedCompanionName}`}>
+                  <div className={`companion-3d-orb ${selectedCompanion.styleClass} overflow-hidden flex items-center justify-center p-1`}>
+                    <img src={selectedCompanion.imageUrl} alt={`${selectedCompanionName}, ${selectedCompanion.role}`} className="companion-3d-image w-full h-full object-cover rounded-full drop-shadow-md" />
+                    <span className="companion-3d-glint" aria-hidden="true" />
+                  </div>
+                  <div className="companion-stage-caption"><span>{selectedCompanion.role}</span><strong>{selectedCompanionName}</strong></div>
+                  <div className="companion-speech-bubble">{selectedCompanion.reaction}</div>
+                </div>
                 {(favoriteRegularMedal || favoriteStreakMedal) && (
                   <div className="favorite-medal-highlight" title="Medalha favorita">
                     <div className="favorite-medal-icon">
@@ -461,8 +472,8 @@ export default function Profile() {
               <p className="mt-2 text-sm text-muted-foreground">Escolha a criatura arcana que acompanhará sua jornada e testemunhará suas leituras.</p>
             </div>
             <div className="companion-badge-pill">
-              <span>{COMPANIONS.find(c => c.id === (profile.companionId || 'owl'))?.symbol || '🦉'}</span>
-              <span>{COMPANIONS.find(c => c.id === (profile.companionId || 'owl'))?.label || 'Coruja Arcana'}</span>
+              <img src={selectedCompanion.imageUrl} alt="" className="companion-badge-image" />
+              <span>{selectedCompanionName}</span>
             </div>
           </div>
           <div className="companion-grid">
@@ -475,7 +486,7 @@ export default function Profile() {
                   onClick={() => update('companionId', comp.id)}
                   className={`companion-card wand-click ${selected ? 'is-selected' : ''}`}
                 >
-                  <div className="companion-icon-box text-2xl">{comp.symbol}</div>
+                  <div className="companion-icon-box"><img src={comp.imageUrl} alt="" className="companion-picker-image" /></div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
                       <h3 className="font-serif text-lg leading-tight">{comp.label}</h3>
@@ -487,6 +498,13 @@ export default function Profile() {
                 </button>
               );
             })}
+          </div>
+          <div className="companion-name-editor">
+            <div>
+              <p className="eyebrow">Nome do guardião</p>
+              <p className="mt-1 text-sm text-muted-foreground">O nome padrão é <strong>{selectedCompanion.label}</strong>. Você pode criar um nome próprio para este companheiro.</p>
+            </div>
+            <Input id="companion-name" value={profile.companionNames?.[selectedCompanion.id] ?? selectedCompanion.label} maxLength={32} onChange={event => updateCompanionName(selectedCompanion.id, event.target.value)} placeholder={selectedCompanion.label} aria-label={`Nome personalizado de ${selectedCompanion.label}`} />
           </div>
         </Card>
 

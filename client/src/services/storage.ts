@@ -10,6 +10,25 @@ const STORAGE_KEYS = {
   READING_REMINDER: 'vortex_reading_reminder',
 };
 
+const DEFAULT_COMPANION_NAMES: Record<string, string> = {
+  owl: 'Coruja das Neves',
+  dragon: 'Dragão Vermelho',
+  fox: 'Raposa Patrono',
+  hippogriff: 'Hipogrifo',
+  cat: 'Gatinha Tricolor',
+};
+
+function sanitizeCompanionNames(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return { ...DEFAULT_COMPANION_NAMES };
+  const source = value as Record<string, unknown>;
+  return Object.fromEntries(
+    Object.entries(DEFAULT_COMPANION_NAMES).map(([id, defaultName]) => {
+      const customName = typeof source[id] === 'string' ? source[id].trim().slice(0, 32) : '';
+      return [id, customName || defaultName];
+    }),
+  );
+}
+
 const DEFAULT_PROFILE: UserProfile = {
   displayName: 'Leitor Vortex',
   bio: 'Uma biblioteca pessoal para manter próximas as histórias que ainda têm algo a revelar.',
@@ -19,6 +38,7 @@ const DEFAULT_PROFILE: UserProfile = {
   favoriteVillain: '',
   favoriteMedalId: undefined,
   companionId: 'owl',
+  companionNames: { ...DEFAULT_COMPANION_NAMES },
 };
 const DEFAULT_REMINDER: ReadingReminderSettings = {
   enabled: false,
@@ -189,6 +209,7 @@ export const storageService = {
         favoriteCharacter: typeof stored.favoriteCharacter === 'string' ? stored.favoriteCharacter : '',
         favoriteVillain: typeof stored.favoriteVillain === 'string' ? stored.favoriteVillain : '',
         companionId: typeof stored.companionId === 'string' ? stored.companionId : 'owl',
+        companionNames: sanitizeCompanionNames(stored.companionNames),
       };
 
     } catch {
