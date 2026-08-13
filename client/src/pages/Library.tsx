@@ -11,13 +11,39 @@ import { Book, BookStatus } from '@/types/book';
 
 const statusLabels: Record<BookStatus, string> = { 'want-to-read': 'Quero ler', reading: 'Em leitura', paused: 'Pausado', completed: 'Concluído' };
 
+const editionFlags: Record<string, { flag: string; name: string }> = {
+  BR: { flag: '🇧🇷', name: 'Brasil' }, PT: { flag: '🇵🇹', name: 'Portugal' },
+  US: { flag: '🇺🇸', name: 'Estados Unidos' }, GB: { flag: '🇬🇧', name: 'Reino Unido' },
+  CA: { flag: '🇨🇦', name: 'Canadá' }, FR: { flag: '🇫🇷', name: 'França' },
+  ES: { flag: '🇪🇸', name: 'Espanha' }, DE: { flag: '🇩🇪', name: 'Alemanha' },
+  IT: { flag: '🇮🇹', name: 'Itália' }, JP: { flag: '🇯🇵', name: 'Japão' },
+  KR: { flag: '🇰🇷', name: 'Coreia do Sul' }, CN: { flag: '🇨🇳', name: 'China' },
+  RU: { flag: '🇷🇺', name: 'Rússia' },
+};
+
+const languageToEdition: Record<string, { flag: string; name: string }> = {
+  en: editionFlags.US, eng: editionFlags.US, pt: editionFlags.BR, por: editionFlags.BR,
+  es: editionFlags.ES, spa: editionFlags.ES, fr: editionFlags.FR, fre: editionFlags.FR, fra: editionFlags.FR,
+  de: editionFlags.DE, ger: editionFlags.DE, deu: editionFlags.DE, it: editionFlags.IT, ita: editionFlags.IT,
+  ja: editionFlags.JP, jpn: editionFlags.JP, ko: editionFlags.KR, kor: editionFlags.KR,
+  zh: editionFlags.CN, zho: editionFlags.CN, ru: editionFlags.RU, rus: editionFlags.RU,
+};
+
+function getEditionInfo(value: unknown, fallback = editionFlags.BR) {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const normalized = String(raw || '').toLowerCase().replace('/languages/', '').slice(0, 3);
+  const countryCode = String(raw || '').toUpperCase();
+  return editionFlags[countryCode] || languageToEdition[normalized] || fallback;
+}
+
 interface ApiBookResult {
   id: string;
   title: string;
   authors: string[];
   pageCount: number;
   thumbnail: string;
-  country: string;
+  countryFlag: string;
+  countryName: string;
   format: 'Físico' | 'E-book';
   publishedDate: string;
 }
@@ -57,10 +83,8 @@ export default function Library() {
       if (data.items && data.items.length > 0) {
         results = data.items.map((item: any, index: number) => {
           const info = item.volumeInfo || {};
-          const countryCode = info.language ? info.language.toUpperCase() : 'BR';
-          const flagMap: Record<string, string> = { 'PT': '🇧🇷', 'BR': '🇧🇷', 'EN': '🇺🇸', 'US': '🇺🇸', 'FR': '🇫🇷', 'ES': '🇪🇸', 'DE': '🇩🇪', 'IT': '🇮🇹', 'JA': '🇯🇵' };
-          const countryFlag = flagMap[countryCode] || '🌐';
-          const formatType: 'Físico' | 'E-book' = (index % 2 === 0) ? 'Físico' : 'E-book';
+          const edition = getEditionInfo(item.saleInfo?.country || item.accessInfo?.country || info.language);
+          const formatType: 'Físico' | 'E-book' = item.accessInfo?.epub?.isAvailable ? 'E-book' : (item.accessInfo?.pdf?.isAvailable ? 'E-book' : 'Físico');
 
           return {
             id: item.id || 'gb_' + index + Math.random(),
@@ -68,7 +92,8 @@ export default function Library() {
             authors: info.authors || ['Autor Desconhecido'],
             pageCount: info.pageCount || Math.floor(Math.random() * 250) + 200,
             thumbnail: info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80',
-            country: countryFlag + ' ' + (countryCode === 'BR' || countryCode === 'PT' ? 'Brasil' : countryCode),
+            countryFlag: edition.flag,
+            countryName: edition.name,
             format: formatType,
             publishedDate: info.publishedDate ? info.publishedDate.substring(0, 4) : '2024'
           };
@@ -85,7 +110,8 @@ export default function Library() {
         const olData = await olRes.json();
         if (olData.docs && olData.docs.length > 0) {
           results = olData.docs.map((doc: any, index: number) => {
-            const formatType: 'Físico' | 'E-book' = (index % 3 === 0) ? 'E-book' : 'Físico';
+            const edition = getEditionInfo(doc.publish_country || doc.country || doc.language || doc.publish_place);
+            const formatType: 'Físico' | 'E-book' = doc.ebook_access || doc.public_scan_b || doc.ebook_count ? 'E-book' : 'Físico';
             return {
               id: 'ol_' + index + Math.random(),
               title: doc.title || query,
@@ -94,7 +120,8 @@ export default function Library() {
               thumbnail: doc.cover_i 
                 ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` 
                 : 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80',
-              country: '🇧🇷 Brasil',
+              countryFlag: edition.flag,
+              countryName: edition.name,
               format: formatType,
               publishedDate: doc.first_publish_year ? String(doc.first_publish_year) : '2024'
             };
@@ -122,7 +149,7 @@ export default function Library() {
       isFavorite: false,
       coverUrl: apiBook.thumbnail.replace('http:', 'https:').replace('&zoom=1', '&zoom=0'),
       addedDate: new Date().toISOString().split('T')[0],
-      description: `Tomo catalogado via Catálogo Global (${apiBook.country}). Formato: ${apiBook.format}. Publicado em ${apiBook.publishedDate}.`,
+      description: `Tomo catalogado via Catálogo Global (${apiBook.countryName}). Formato: ${apiBook.format}. Publicado em ${apiBook.publishedDate}.`,
       notes: [],
       quotes: [],
     };
@@ -213,7 +240,7 @@ export default function Library() {
                         
                         <div className="space-y-1.5 pt-1 border-t border-border/40 text-[10px]">
                           <div className="flex items-center justify-between text-muted-foreground">
-                            <span>{item.country}</span>
+                            <span title={`Edição de ${item.countryName}`} aria-label={`Edição de ${item.countryName}`} className="text-base leading-none">{item.countryFlag}</span>
                             <span className="font-semibold text-[#caa85e]">{item.pageCount} pág.</span>
                           </div>
                           <div className="flex items-center justify-between text-muted-foreground">
