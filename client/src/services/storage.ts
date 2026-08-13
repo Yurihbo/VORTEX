@@ -1,204 +1,127 @@
-import { Book, ReadingGoal, Achievement, ReadingStreak, LibraryStats, ReadingReminderSettings, UserProfile } from '@/types/book';
+import { Book, UserProfile, ReadingGoal, Achievement, ReadingStreak, ReadingReminderSettings } from '@/types/book';
+
+export type { Book, UserProfile, ReadingGoal, Achievement, ReadingStreak, ReadingReminderSettings };
+
+export interface CustomCollection {
+  id: string;
+  name: string;
+  description: string;
+  borderColor: string;
+  bookIds: string[];
+  createdAt: string;
+}
 
 const STORAGE_KEYS = {
   BOOKS: 'vortex_books',
+  PROFILE: 'vortex_user_profile',
   READING_GOAL: 'vortex_reading_goal',
   ACHIEVEMENTS: 'vortex_achievements',
   READING_STREAK: 'vortex_reading_streak',
-  LIBRARY_STATS: 'vortex_library_stats',
-  USER_PROFILE: 'vortex_user_profile',
   READING_REMINDER: 'vortex_reading_reminder',
+  CUSTOM_COLLECTIONS: 'vortex_custom_collections',
 };
 
-const DEFAULT_PROFILE: UserProfile = {
-  displayName: 'Leitor Vortex',
-  bio: 'Uma biblioteca pessoal para manter próximas as histórias que ainda têm algo a revelar.',
-  totalReadingHours: 0,
-  favoriteBook: '',
-  favoriteCharacter: '',
-  favoriteVillain: '',
-  favoriteMedalId: undefined,
-};
-const DEFAULT_REMINDER: ReadingReminderSettings = {
-  enabled: false,
-  time: '20:00',
-};
-
-// Default demo books
 const DEFAULT_BOOKS: Book[] = [
   {
     id: '1',
     title: 'Duna',
     author: 'Frank Herbert',
-    isbn: '978-0441172719',
-    publisher: 'Ace',
-    year: 1965,
-    pages: 688,
     genre: 'Ficção Científica',
-    description: 'Uma épica de ficção científica sobre política, religião e ecologia em um planeta desértico.',
-    status: 'reading',
-    isFavorite: true,
+    description: 'Uma obra-prima da política interestelar e ecologia no deserto de Arrakis.',
+    coverUrl: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&q=80&w=800',
+    status: 'completed',
+    currentPage: 688,
+    pages: 688,
     rating: 5,
-    currentPage: 250,
-    addedDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    isFavorite: true,
+    addedDate: '2026-01-15',
     notes: [],
     quotes: [],
   },
   {
     id: '2',
-    title: 'O Hobbit',
+    title: 'O Senhor dos Anéis: A Sociedade do Anel',
     author: 'J.R.R. Tolkien',
-    isbn: '978-0547928227',
-    publisher: 'Houghton Mifflin Harcourt',
-    year: 1937,
-    pages: 310,
     genre: 'Fantasia',
-    description: 'A aventura de Bilbo Bolseiro em uma jornada inesperada com anões e um mago.',
-    status: 'completed',
-    isFavorite: true,
+    description: 'A jornada épica rumo à montanha da perdição para destruir o Um Anel.',
+    coverUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=800',
+    status: 'reading',
+    currentPage: 245,
+    pages: 423,
     rating: 5,
-    currentPage: 310,
-    completedDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-    addedDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+    isFavorite: true,
+    addedDate: '2026-02-01',
     notes: [],
     quotes: [],
   },
   {
     id: '3',
-    title: '1984',
-    author: 'George Orwell',
-    isbn: '978-0451524935',
-    publisher: 'Signet Classics',
-    year: 1949,
-    pages: 328,
-    genre: 'Ficção Distópica',
-    description: 'Um romance distópico sobre totalitarismo e vigilância em massa.',
+    title: 'Neuromancer',
+    author: 'William Gibson',
+    genre: 'Cyberpunk',
+    description: 'O clássico fundacional do cyberpunk e ciberespaço.',
+    coverUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=800',
     status: 'want-to-read',
-    isFavorite: false,
-    rating: undefined,
     currentPage: 0,
-    addedDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    pages: 316,
+    isFavorite: false,
+    addedDate: '2026-02-10',
     notes: [],
     quotes: [],
   },
   {
     id: '4',
-    title: 'O Senhor dos Anéis: A Sociedade do Anel',
+    title: 'O Silmarillion',
     author: 'J.R.R. Tolkien',
-    isbn: '978-0544003415',
-    publisher: 'Houghton Mifflin Harcourt',
-    year: 1954,
-    pages: 423,
     genre: 'Fantasia',
-    description: 'O primeiro livro da trilogia épica sobre a jornada para destruir o Um Anel.',
-    status: 'reading',
-    isFavorite: true,
-    rating: 5,
-    currentPage: 150,
-    addedDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-    notes: [],
-    quotes: [],
-  },
-  {
-    id: '5',
-    title: 'Harry Potter e a Pedra Filosofal',
-    author: 'J.K. Rowling',
-    isbn: '978-0439708180',
-    publisher: 'Scholastic',
-    year: 1997,
-    pages: 309,
-    genre: 'Fantasia',
-    description: 'A primeira aventura de Harry Potter em Hogwarts.',
-    status: 'completed',
-    isFavorite: true,
-    rating: 4,
-    currentPage: 309,
-    completedDate: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
-    addedDate: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000).toISOString(),
-    notes: [],
-    quotes: [],
-  },
-  {
-    id: '6',
-    title: 'Dom Casmurro',
-    author: 'Machado de Assis',
-    isbn: '978-8535914177',
-    publisher: 'Companhia das Letras',
-    year: 1899,
-    pages: 256,
-    genre: 'Romance',
-    description: 'Um clássico da literatura brasileira sobre amor, ciúmes e memória.',
+    description: 'A história mitológica dos dias antigos da Terra-média.',
+    coverUrl: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&q=80&w=800',
     status: 'want-to-read',
-    isFavorite: false,
-    rating: undefined,
     currentPage: 0,
-    addedDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    pages: 450,
+    isFavorite: false,
+    addedDate: '2026-02-12',
     notes: [],
     quotes: [],
   },
 ];
 
-function dateKey(value: string | Date): string {
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
-}
+const DEFAULT_PROFILE: UserProfile = {
+  displayName: 'Yurihbo',
+  bio: 'Guardião dos tomos ancestrais e viajante dos reinos da imaginação.',
+  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
+  totalReadingHours: 142,
+  favoriteBook: 'O Senhor dos Anéis',
+  favoriteCharacter: 'Gandalf',
+  favoriteVillain: 'Sauron',
+  favoriteMedalId: 'streak_7',
+};
 
-function dayDistance(from: string, to: string): number {
-  const fromTime = Date.parse(`${from}T00:00:00Z`);
-  const toTime = Date.parse(`${to}T00:00:00Z`);
-  return Math.round((toTime - fromTime) / 86400000);
-}
+const DEFAULT_COLLECTIONS: CustomCollection[] = [
+  {
+    id: 'tolkien-collection',
+    name: 'Universidade de Tolkien',
+    description: 'A Terra-média e os contos de Arda.',
+    borderColor: '#caa85e',
+    bookIds: ['2', '4'],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'sci-fi-classics',
+    name: 'Mestres da Ficção',
+    description: 'Universos futuristas e distopias inesquecíveis.',
+    borderColor: '#3b82f6',
+    bookIds: ['1', '3'],
+    createdAt: new Date().toISOString(),
+  },
+];
 
-function calculateReadingStreak(readingDates: string[]): ReadingStreak {
-  const dates = Array.from(new Set(readingDates.map(dateKey).filter(Boolean))).sort();
-  if (!dates.length) return { currentStreak: 0, bestStreak: 0, readingDates: [] };
-
-  let bestStreak = 1;
-  let run = 1;
-  for (let index = 1; index < dates.length; index += 1) {
-    run = dayDistance(dates[index - 1], dates[index]) === 1 ? run + 1 : 1;
-    bestStreak = Math.max(bestStreak, run);
-  }
-
-  const today = dateKey(new Date());
-  const lastDate = dates[dates.length - 1];
-  let currentStreak = dayDistance(lastDate, today) <= 1 ? 1 : 0;
-  for (let index = dates.length - 1; currentStreak > 0 && index > 0; index -= 1) {
-    if (dayDistance(dates[index - 1], dates[index]) !== 1) break;
-    currentStreak += 1;
-  }
-
-  return { currentStreak, bestStreak, lastReadDate: lastDate, readingDates: dates };
-}
+const DEFAULT_REMINDER: ReadingReminderSettings = {
+  enabled: true,
+  time: '21:00',
+};
 
 export const storageService = {
-  // Profile
-  getUserProfile(): UserProfile {
-    try {
-      const data = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
-      if (!data) return DEFAULT_PROFILE;
-      const stored = JSON.parse(data) as Partial<UserProfile>;
-      return {
-        ...DEFAULT_PROFILE,
-        ...stored,
-        displayName: typeof stored.displayName === 'string' ? stored.displayName : DEFAULT_PROFILE.displayName,
-        bio: typeof stored.bio === 'string' ? stored.bio : DEFAULT_PROFILE.bio,
-        totalReadingHours: Number(stored.totalReadingHours) || 0,
-        favoriteBook: typeof stored.favoriteBook === 'string' ? stored.favoriteBook : '',
-        favoriteCharacter: typeof stored.favoriteCharacter === 'string' ? stored.favoriteCharacter : '',
-        favoriteVillain: typeof stored.favoriteVillain === 'string' ? stored.favoriteVillain : '',
-      };
-
-    } catch {
-      return DEFAULT_PROFILE;
-    }
-  },
-
-  saveUserProfile(profile: UserProfile): void {
-    localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
-  },
-
-  // Books
   getBooks(): Book[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.BOOKS);
@@ -236,7 +159,6 @@ export const storageService = {
     return this.getBooks().find(b => b.id === id);
   },
 
-  // Reading Goal
   getReadingGoal(): ReadingGoal {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.READING_GOAL);
@@ -250,7 +172,6 @@ export const storageService = {
     localStorage.setItem(STORAGE_KEYS.READING_GOAL, JSON.stringify(goal));
   },
 
-  // Achievements
   getAchievements(): Achievement[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.ACHIEVEMENTS);
@@ -264,40 +185,52 @@ export const storageService = {
     localStorage.setItem(STORAGE_KEYS.ACHIEVEMENTS, JSON.stringify(achievements));
   },
 
-  // Reading Streak
+  getUserProfile(): UserProfile {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.PROFILE);
+      return data ? { ...DEFAULT_PROFILE, ...JSON.parse(data) } : DEFAULT_PROFILE;
+    } catch {
+      return DEFAULT_PROFILE;
+    }
+  },
+
+  saveUserProfile(profile: UserProfile): void {
+    localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
+  },
+
   getReadingStreak(): ReadingStreak {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.READING_STREAK);
-      if (!data) return { currentStreak: 0, bestStreak: 0, readingDates: [] };
-      const stored = JSON.parse(data) as Partial<ReadingStreak>;
-      const readingDates = Array.isArray(stored.readingDates) ? stored.readingDates : [];
-      return readingDates.length
-        ? calculateReadingStreak(readingDates)
-        : { currentStreak: Number(stored.currentStreak) || 0, bestStreak: Number(stored.bestStreak) || 0, lastReadDate: stored.lastReadDate, readingDates: [] };
+      return data ? JSON.parse(data) : { currentStreak: 5, bestStreak: 12, readingDates: [] };
     } catch {
-      return { currentStreak: 0, bestStreak: 0, readingDates: [] };
+      return { currentStreak: 5, bestStreak: 12, readingDates: [] };
     }
   },
 
   saveReadingStreak(streak: ReadingStreak): void {
-    const readingDates = Array.isArray(streak.readingDates) ? streak.readingDates : [];
-    const normalized = readingDates.length
-      ? calculateReadingStreak(readingDates)
-      : { ...streak, currentStreak: Math.max(0, Number(streak.currentStreak) || 0), bestStreak: Math.max(0, Number(streak.bestStreak) || 0), readingDates: [] };
-    localStorage.setItem(STORAGE_KEYS.READING_STREAK, JSON.stringify(normalized));
+    localStorage.setItem(STORAGE_KEYS.READING_STREAK, JSON.stringify(streak));
   },
 
-  recordReadingDay(value: string | Date = new Date()): ReadingStreak {
-    const today = dateKey(value);
-    if (!today) return this.getReadingStreak();
-    const previous = this.getReadingStreak();
-    const next = calculateReadingStreak([...(previous.readingDates || []), today]);
-    this.saveReadingStreak(next);
-    return next;
+  recordReadingDay(dateStr?: string): ReadingStreak {
+    const streak = this.getReadingStreak();
+    const today = dateStr || new Date().toISOString().split('T')[0];
+    const dates = streak.readingDates || [];
+    if (!dates.includes(today)) {
+      dates.push(today);
+      dates.sort();
+    }
+    const newStreak: ReadingStreak = {
+      ...streak,
+      lastReadDate: today,
+      readingDates: dates,
+      currentStreak: streak.currentStreak + 1,
+      bestStreak: Math.max(streak.bestStreak, streak.currentStreak + 1),
+    };
+    this.saveReadingStreak(newStreak);
+    return newStreak;
   },
 
-  // Library Stats
-  getLibraryStats(): LibraryStats {
+  getLibraryStats() {
     const books = this.getBooks();
     const completedBooks = books.filter(b => b.status === 'completed');
     const totalPages = books.reduce((sum, b) => sum + (b.currentPage || 0), 0);
@@ -315,7 +248,6 @@ export const storageService = {
       return date.getFullYear() === now.getFullYear();
     });
 
-    // Find favorite genre
     const genreCounts: { [key: string]: number } = {};
     books.forEach(b => {
       genreCounts[b.genre] = (genreCounts[b.genre] || 0) + 1;
@@ -333,21 +265,21 @@ export const storageService = {
     };
   },
 
-  // Daily reading reminder
   getReadingReminderSettings(): ReadingReminderSettings {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.READING_REMINDER);
       if (!stored) return { ...DEFAULT_REMINDER };
       const parsed = JSON.parse(stored) as Partial<ReadingReminderSettings>;
-      return { ...DEFAULT_REMINDER, ...parsed, enabled: Boolean(parsed.enabled), time: /^([01]\\d|2[0-3]):[0-5]\\d$/.test(String(parsed.time)) ? String(parsed.time) : DEFAULT_REMINDER.time };
+      return { ...DEFAULT_REMINDER, ...parsed, enabled: Boolean(parsed.enabled) };
     } catch {
       return { ...DEFAULT_REMINDER };
     }
   },
+
   saveReadingReminderSettings(settings: ReadingReminderSettings): void {
     localStorage.setItem(STORAGE_KEYS.READING_REMINDER, JSON.stringify({ ...DEFAULT_REMINDER, ...settings }));
   },
-  // Export/Import
+
   exportLibrary(): string {
     const data = {
       books: this.getBooks(),
@@ -356,6 +288,7 @@ export const storageService = {
       readingStreak: this.getReadingStreak(),
       userProfile: this.getUserProfile(),
       readingReminder: this.getReadingReminderSettings(),
+      collections: collectionStorage.getCollections(),
       exportDate: new Date().toISOString(),
     };
     return JSON.stringify(data, null, 2);
@@ -371,6 +304,7 @@ export const storageService = {
         if (data.readingStreak) this.saveReadingStreak(data.readingStreak);
         if (data.userProfile) this.saveUserProfile({ ...DEFAULT_PROFILE, ...data.userProfile });
         if (data.readingReminder) this.saveReadingReminderSettings({ ...DEFAULT_REMINDER, ...data.readingReminder });
+        if (data.collections && Array.isArray(data.collections)) collectionStorage.saveCollections(data.collections);
         return true;
       }
       return false;
@@ -379,48 +313,20 @@ export const storageService = {
     }
   },
 
-  // Clear all data
   clearAll(): void {
     Object.values(STORAGE_KEYS).forEach(key => {
       localStorage.removeItem(key);
     });
+    localStorage.removeItem('vortex_custom_collections');
   },
 };
-
-export interface CustomCollection {
-  id: string;
-  name: string;
-  description: string;
-  borderColor: string;
-  bookIds: string[];
-  createdAt: string;
-}
-
-const DEFAULT_COLLECTIONS: CustomCollection[] = [
-  {
-    id: 'tolkien-collection',
-    name: 'Universidade de Tolkien',
-    description: 'A Terra-média e os contos de Arda.',
-    borderColor: '#caa85e',
-    bookIds: ['2', '4'],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'sci-fi-classics',
-    name: 'Mestres da Ficção',
-    description: 'Universos futuristas e distopias inesquecíveis.',
-    borderColor: '#3b82f6',
-    bookIds: ['1', '3'],
-    createdAt: new Date().toISOString(),
-  },
-];
 
 export const collectionStorage = {
   getCollections(): CustomCollection[] {
     try {
-      const data = localStorage.getItem('vortex_custom_collections');
+      const data = localStorage.getItem(STORAGE_KEYS.CUSTOM_COLLECTIONS);
       if (!data) {
-        localStorage.setItem('vortex_custom_collections', JSON.stringify(DEFAULT_COLLECTIONS));
+        localStorage.setItem(STORAGE_KEYS.CUSTOM_COLLECTIONS, JSON.stringify(DEFAULT_COLLECTIONS));
         return DEFAULT_COLLECTIONS;
       }
       return JSON.parse(data);
@@ -429,13 +335,34 @@ export const collectionStorage = {
     }
   },
   saveCollections(collections: CustomCollection[]): void {
-    localStorage.setItem('vortex_custom_collections', JSON.stringify(collections));
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_COLLECTIONS, JSON.stringify(collections));
     window.dispatchEvent(new Event('vortex-collections-updated'));
+  },
+  addCollection(collection: Omit<CustomCollection, 'id' | 'createdAt'>): CustomCollection {
+    const collections = this.getCollections();
+    const newCol: CustomCollection = {
+      ...collection,
+      id: 'col_' + Math.random().toString(36).substring(2, 9),
+      createdAt: new Date().toISOString(),
+    };
+    collections.push(newCol);
+    this.saveCollections(collections);
+    return newCol;
+  },
+  updateCollection(updated: CustomCollection): void {
+    const collections = this.getCollections();
+    const index = collections.findIndex(c => c.id === updated.id);
+    if (index !== -1) {
+      collections[index] = updated;
+      this.saveCollections(collections);
+    }
+  },
+  deleteCollection(id: string): void {
+    const collections = this.getCollections();
+    this.saveCollections(collections.filter(c => c.id !== id));
   },
 };
 
 export function getBooks(): Book[] {
   return storageService.getBooks();
 }
-
-export type { Book };
