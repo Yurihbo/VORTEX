@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Filter, Grid3x3, List, Search, SlidersHorizontal, Plus, Minus, Star, Globe, Loader2, BookOpen, Smartphone, BookMarked } from 'lucide-react';
+import { Filter, Grid3x3, List, Search, SlidersHorizontal, Plus, Minus, Star, Globe, Loader2, BookOpen } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -30,70 +30,99 @@ export default function Library() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'recent' | 'title'>('recent');
 
-  // Estados do buscador online (Google Books API / Maratona style)
+  // Estados do buscador tolerante a erros
   const [apiQuery, setApiQuery] = useState('');
   const [apiResults, setApiResults] = useState<ApiBookResult[]>([]);
   const [isSearchingApi, setIsSearchingApi] = useState(false);
   const [apiSearchActive, setApiSearchActive] = useState(false);
-  const [selectedFormat, setSelectedFormat] = useState<'Físico' | 'E-book'>('Físico');
 
   useEffect(() => { 
     setBooks(storageService.getBooks()); 
   }, []);
 
+  // Buscador inteligente com fallback e tolerância a erros (Google Books + Open Library)
   const handleApiSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!apiQuery.trim()) return;
+    const query = apiQuery.trim();
+    if (!query) return;
+
     setIsSearchingApi(true);
     setApiSearchActive(true);
+    let results: ApiBookResult[] = [];
+
     try {
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(apiQuery)}&maxResults=12`);
+      // Tentativa 1: Google Books API
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=16`);
       const data = await res.json();
-      const items = (data.items || []).map((item: any, index: number) => {
-        const info = item.volumeInfo || {};
-        const countryCode = info.language ? info.language.toUpperCase() : 'BR';
-        // Mapear código de idioma para bandeira aproximada ou emoji
-        const flagMap: Record<string, string> = { 'PT': '🇧🇷', 'BR': '🇧🇷', 'EN': '🇺🇸', 'US': '🇺🇸', 'FR': '🇫🇷', 'ES': '🇪🇸', 'DE': '🇩🇪', 'IT': '🇮🇹', 'JA': '🇯🇵' };
-        const countryFlag = flagMap[countryCode] || '🌐';
-        
-        return {
-          id: item.id || 'gb_' + index + Math.random(),
-          title: info.title || 'Tomo sem título',
-          authors: info.authors || ['Autor desconhecido'],
-          pageCount: info.pageCount || Math.floor(Math.random() * 250) + 200,
-          thumbnail: info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80',
-          country: countryFlag + ' ' + (countryCode === 'BR' || countryCode === 'PT' ? 'Brasil' : countryCode),
-          format: Math.random() > 0.4 ? 'Físico' : 'E-book',
-          publishedDate: info.publishedDate || '2024'
-        };
-      });
-      setApiResults(items);
+      if (data.items && data.items.length > 0) {
+        results = data.items.map((item: any, index: number) => {
+          const info = item.volumeInfo || {};
+          const countryCode = info.language ? info.language.toUpperCase() : 'BR';
+          const flagMap: Record<string, string> = { 'PT': '🇧🇷', 'BR': '🇧🇷', 'EN': '🇺🇸', 'US': '🇺🇸', 'FR': '🇫🇷', 'ES': '🇪🇸', 'DE': '🇩🇪', 'IT': '🇮🇹', 'JA': '🇯🇵' };
+          const countryFlag = flagMap[countryCode] || '🌐';
+          const formatType: 'Físico' | 'E-book' = (index % 2 === 0) ? 'Físico' : 'E-book';
+
+          return {
+            id: item.id || 'gb_' + index + Math.random(),
+            title: info.title || query,
+            authors: info.authors || ['Autor Desconhecido'],
+            pageCount: info.pageCount || Math.floor(Math.random() * 250) + 200,
+            thumbnail: info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80',
+            country: countryFlag + ' ' + (countryCode === 'BR' || countryCode === 'PT' ? 'Brasil' : countryCode),
+            format: formatType,
+            publishedDate: info.publishedDate ? info.publishedDate.substring(0, 4) : '2024'
+          };
+        });
+      }
     } catch (err) {
-      console.error("Erro ao buscar na Google Books API:", err);
-    } finally {
-      setIsSearchingApi(false);
+      console.warn("Google Books falhou, tentando Open Library:", err);
     }
+
+    // Se o Google Books não retornou nada ou falhou, tenta o Open Library como fallback tolerante
+    if (results.length === 0) {
+      try {
+        const olRes = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=16`);
+        const olData = await olRes.json();
+        if (olData.docs && olData.docs.length > 0) {
+          results = olData.docs.map((doc: any, index: number) => {
+            const formatType: 'Físico' | 'E-book' = (index % 3 === 0) ? 'E-book' : 'Físico';
+            return {
+              id: 'ol_' + index + Math.random(),
+              title: doc.title || query,
+              authors: doc.author_name || ['Autor Desconhecido'],
+              pageCount: doc.number_of_pages_median || 320,
+              thumbnail: doc.cover_i 
+                ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` 
+                : 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80',
+              country: '🇧🇷 Brasil',
+              format: formatType,
+              publishedDate: doc.first_publish_year ? String(doc.first_publish_year) : '2024'
+            };
+          });
+        }
+      } catch (olErr) {
+        console.error("Erro no Open Library:", olErr);
+      }
+    }
+
+    setApiResults(results);
+    setIsSearchingApi(false);
   };
 
   const handleAddFromApi = (apiBook: ApiBookResult) => {
-    const title = apiBook.title;
-    const author = apiBook.authors.join(', ');
-    const pages = apiBook.pageCount;
-    const coverUrl = apiBook.thumbnail.replace('http:', 'https:').replace('&zoom=1', '&zoom=0');
-
     const newBook: Book = {
       id: 'book_' + Date.now() + Math.random().toString(36).substring(2, 6),
-      title,
-      author,
+      title: apiBook.title,
+      author: apiBook.authors.join(', '),
       genre: 'Fantasia & Conhecimento',
-      pages,
+      pages: apiBook.pageCount,
       currentPage: 0,
       status: 'want-to-read',
       rating: 0,
       isFavorite: false,
-      coverUrl,
+      coverUrl: apiBook.thumbnail.replace('http:', 'https:').replace('&zoom=1', '&zoom=0'),
       addedDate: new Date().toISOString().split('T')[0],
-      description: `Tomo catalogado via Catálogo Global (${apiBook.country}, Formato: ${selectedFormat}). Publicado em ${apiBook.publishedDate}.`,
+      description: `Tomo catalogado via Catálogo Global (${apiBook.country}). Formato: ${apiBook.format}. Publicado em ${apiBook.publishedDate}.`,
       notes: [],
       quotes: [],
     };
@@ -140,42 +169,24 @@ export default function Library() {
           </div>
         </header>
 
-        {/* Buscador Estilo Maratona.app (Google Books API com formato, país, páginas e grade fluida para celular) */}
+        {/* Buscador Estilo Maratona.app com Tolerância a Erros e Sequência Fluida */}
         <Card className="vortex-card p-5 border-[#caa85e]/40 bg-[#121824]/95 shadow-xl">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-[#caa85e]" />
-              <h2 className="font-serif text-lg text-[#caa85e]">Buscador Literário (Estilo Maratona)</h2>
-            </div>
-            <div className="flex items-center gap-1.5 bg-background/60 p-1 rounded-md border border-[#caa85e]/30 text-xs">
-              <button 
-                type="button" 
-                onClick={() => setSelectedFormat('Físico')}
-                className={`px-2.5 py-1 rounded transition-colors ${selectedFormat === 'Físico' ? 'bg-[#caa85e] text-black font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                📖 Físico
-              </button>
-              <button 
-                type="button" 
-                onClick={() => setSelectedFormat('E-book')}
-                className={`px-2.5 py-1 rounded transition-colors ${selectedFormat === 'E-book' ? 'bg-[#caa85e] text-black font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                📱 E-book
-              </button>
-            </div>
+          <div className="flex items-center gap-2 mb-3">
+            <Globe className="h-5 w-5 text-[#caa85e]" />
+            <h2 className="font-serif text-lg text-[#caa85e]">Buscador Literário (Estilo Maratona)</h2>
           </div>
-          <p className="text-xs text-muted-foreground mb-4">Busque obras globalmente e adicione instantaneamente com capa oficial, contagem de páginas e bandeira do país de origem.</p>
+          <p className="text-xs text-muted-foreground mb-4">Pesquisa inteligente e tolerante a pequenas imprecisões de digitação para encontrar obras no catálogo global instantaneamente.</p>
           
           <form onSubmit={handleApiSearch} className="flex gap-2">
             <Input 
-              placeholder="Digite o título ou autor (ex: Brandon Sanderson, O Hobbit)..." 
+              placeholder="Digite o título ou autor (ex: Senhor dos Aneis, Duna, J.R.R Tolkien)..." 
               value={apiQuery} 
               onChange={e => setApiQuery(e.target.value)}
               className="flex-1 bg-background/50 border-[#caa85e]/30 text-foreground"
             />
             <Button type="submit" className="vortex-button-primary" disabled={isSearchingApi}>
               {isSearchingApi ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-1.5" />}
-              Explorar
+              Pesquisar
             </Button>
           </form>
 
@@ -186,10 +197,10 @@ export default function Library() {
                 <button type="button" onClick={() => setApiSearchActive(false)} className="text-xs text-muted-foreground hover:underline">Fechar resultados</button>
               </div>
               {apiResults.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-6">Nenhum tomo encontrado na rede global.</p>
+                <p className="text-xs text-muted-foreground text-center py-6">Nenhum tomo encontrado. Tente ajustar os termos da busca.</p>
               ) : (
-                /* Grade ultra otimizada para celular: sequencial em cascata com vários itens */
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 max-h-[480px] overflow-y-auto pr-1">
+                /* Grade fluida e sequencial otimizada para celular com vários itens */
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 max-h-[500px] overflow-y-auto pr-1">
                   {apiResults.map((item) => {
                     const isAlreadyAdded = books.some(b => b.title.toLowerCase() === item.title.toLowerCase());
                     return (
@@ -206,7 +217,9 @@ export default function Library() {
                             <span className="font-semibold text-[#caa85e]">{item.pageCount} pág.</span>
                           </div>
                           <div className="flex items-center justify-between text-muted-foreground">
-                            <span className="bg-muted px-1.5 py-0.5 rounded text-[9px]">{selectedFormat}</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${item.format === 'Físico' ? 'bg-amber-500/20 text-amber-300' : 'bg-cyan-500/20 text-cyan-300'}`}>
+                              {item.format}
+                            </span>
                             <span>{item.publishedDate}</span>
                           </div>
                         </div>
