@@ -386,3 +386,56 @@ export const storageService = {
     });
   },
 };
+
+export interface CustomCollection {
+  id: string;
+  name: string;
+  description: string;
+  borderColor: string;
+  bookIds: string[];
+  createdAt: string;
+}
+
+const DEFAULT_COLLECTIONS: CustomCollection[] = [
+  {
+    id: 'tolkien-collection',
+    name: 'Universidade de Tolkien',
+    description: 'A Terra-média e os contos de Arda.',
+    borderColor: '#caa85e',
+    bookIds: ['2', '4'],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'sci-fi-classics',
+    name: 'Mestres da Ficção',
+    description: 'Universos futuristas e distopias inesquecíveis.',
+    borderColor: '#3b82f6',
+    bookIds: ['1', '3'],
+    createdAt: new Date().toISOString(),
+  },
+];
+
+export const collectionStorage = {
+  getCollections(): CustomCollection[] {
+    try {
+      const data = localStorage.getItem('vortex_custom_collections');
+      if (!data) {
+        localStorage.setItem('vortex_custom_collections', JSON.stringify(DEFAULT_COLLECTIONS));
+        return DEFAULT_COLLECTIONS;
+      }
+      return JSON.parse(data);
+    } catch {
+      return DEFAULT_COLLECTIONS;
+    }
+  },
+  saveCollections(collections: CustomCollection[]): void {
+    localStorage.setItem('vortex_custom_collections', JSON.stringify(collections));
+    window.dispatchEvent(new Event('vortex-collections-updated'));
+  },
+};
+
+export function getBooks(): Book[] {
+  return storageService.getBooks();
+}
+
+export type { Book };

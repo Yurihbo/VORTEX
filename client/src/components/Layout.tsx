@@ -1,6 +1,6 @@
 import { useState, useEffect, ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
-import { BarChart3, BookOpen, Download, Flame, Heart, Home, Menu, Moon, Sparkles, Sun, Target, Trophy, UserRound, WifiOff, X } from 'lucide-react';
+import { BarChart3, BookOpen, Download, FolderPlus, Heart, Home, Menu, Moon, Sparkles, Sun, Target, Trophy, UserRound, WifiOff, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { VortexLogo } from './VortexLogo';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -14,7 +14,7 @@ type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Pro
 const navigationItems = [
   { label: 'Início', href: '/', icon: Home },
   { label: 'Biblioteca', href: '/library', icon: BookOpen },
-  { label: 'Em leitura', href: '/reading', icon: Flame },
+  { label: 'Coleções', href: '/collections', icon: FolderPlus },
   { label: 'Favoritos', href: '/favorites', icon: Heart },
   { label: 'Metas', href: '/goals', icon: Target },
   { label: 'Conquistas', href: '/achievements', icon: Trophy },
@@ -116,9 +116,8 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex items-center gap-2">{deferredPrompt && !isStandalone && <Button variant="outline" size="sm" onClick={installApp} className="hidden sm:inline-flex border-[#caa85e]/35 text-[#caa85e]"><Download className="h-4 w-4 mr-2" /> Instalar app</Button>}<Link href="/add-book" className="header-add-button"><span className="text-lg leading-none">+</span><span className="hidden sm:inline">Adicionar tomo</span></Link></div>
         </header>
         <main className="flex-1 overflow-y-auto pb-24 md:pb-8"><div className="vortex-content container mx-auto py-6 md:py-8">{children}</div></main>
-        <nav className="mobile-bottom-nav md:hidden fixed bottom-0 inset-x-0 z-30 bg-card/95 backdrop-blur-md border-t border-border/60 px-2 py-2"><div className="grid grid-cols-5 gap-1">{[{ label: 'Início', href: '/', icon: Home }, { label: 'Biblioteca', href: '/library', icon: BookOpen }, { label: 'Leitura', href: '/reading', icon: Flame }, { label: 'Favoritos', href: '/favorites', icon: Heart }, { label: 'Perfil', href: '/profile', icon: UserRound }].map(item => { const Icon = item.icon; return <Link key={item.href} href={item.href} className="mobile-nav-item"><Icon className="h-4 w-4" /><span>{item.label}</span></Link>; })}</div></nav>
+        <nav className="mobile-bottom-nav md:hidden fixed bottom-0 inset-x-0 z-30 bg-card/95 backdrop-blur-md border-t border-border/60 px-2 py-2"><div className="grid grid-cols-5 gap-1">{[{ label: 'Início', href: '/', icon: Home }, { label: 'Biblioteca', href: '/library', icon: BookOpen }, { label: 'Coleções', href: '/collections', icon: FolderPlus }, { label: 'Favoritos', href: '/favorites', icon: Heart }, { label: 'Perfil', href: '/profile', icon: UserRound }].map(item => { const Icon = item.icon; return <Link key={item.href} href={item.href} className="mobile-nav-item"><Icon className="h-4 w-4" /><span>{item.label}</span></Link>; })}</div></nav>
       </div>
-      {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />}
     </div>
   );
 }
