@@ -61,6 +61,7 @@ export default function Library() {
   const [apiResults, setApiResults] = useState<ApiBookResult[]>([]);
   const [isSearchingApi, setIsSearchingApi] = useState(false);
   const [apiSearchActive, setApiSearchActive] = useState(false);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
 
   useEffect(() => { 
     setBooks(storageService.getBooks()); 
@@ -157,6 +158,9 @@ export default function Library() {
     const updated = [newBook, ...books];
     setBooks(updated);
     storageService.saveBooks(updated);
+
+    setSuccessToast(`Tomo "${apiBook.title}" adicionado com sucesso!`);
+    setTimeout(() => setSuccessToast(null), 3500);
   };
 
   const handleRemoveBook = (bookId: string, e: React.MouseEvent) => {
@@ -196,13 +200,22 @@ export default function Library() {
           </div>
         </header>
 
-        {/* Buscador Estilo Maratona.app com Tolerância a Erros e Sequência Fluida */}
-        <Card className="vortex-card p-5 border-[#caa85e]/40 bg-[#121824]/95 shadow-xl">
-          <div className="flex items-center gap-2 mb-3">
-            <Globe className="h-5 w-5 text-[#caa85e]" />
-            <h2 className="font-serif text-lg text-[#caa85e]">Buscador Literário (Estilo Maratona)</h2>
+        {/* Buscador Literário Clean e Elegante */}
+        <Card className="vortex-card p-6 border-[#caa85e]/30 bg-card/95 shadow-2xl relative overflow-hidden">
+          {successToast && (
+            <div className="absolute top-0 inset-x-0 bg-emerald-600/90 text-white text-xs py-2 px-4 text-center font-serif flex items-center justify-center gap-2 animate-bounce shadow-md z-30">
+              <span>✨</span> {successToast}
+            </div>
+          )}
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="p-2 rounded-md bg-[#caa85e]/10 border border-[#caa85e]/30">
+              <Globe className="h-4 w-4 text-[#caa85e]" />
+            </div>
+            <div>
+              <h2 className="font-serif text-base font-medium text-foreground tracking-wide">Busca Global de Livros</h2>
+              <p className="text-xs text-muted-foreground">Encontre qualquer obra no catálogo mundial com correção automática de digitação.</p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mb-4">Pesquisa inteligente e tolerante a pequenas imprecisões de digitação para encontrar obras no catálogo global instantaneamente.</p>
           
           <form onSubmit={handleApiSearch} className="flex gap-2">
             <Input 
