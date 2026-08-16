@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vortex-cache-v2';
+const CACHE_NAME = 'vortex-shell-v2';
 const APP_SHELL = ['./', './manifest.json', './vortex-icon.svg'];
 
 self.addEventListener('install', event => {

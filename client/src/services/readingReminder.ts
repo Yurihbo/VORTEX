@@ -1,6 +1,8 @@
 import { storageService } from '@/services/storage';
 
 let reminderTimer: number | undefined;
+let reminderHeartbeat: number | undefined;
+let notificationInFlight = false;
 
 function dayKey(date: Date): string {
   const year = date.getFullYear();
@@ -9,12 +11,21 @@ function dayKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function nextReminderAt(time: string): Date {
+function reminderDate(time: string, date = new Date()): Date {
   const [hours, minutes] = time.split(':').map(Number);
-  const target = new Date();
+  const target = new Date(date);
   target.setHours(Number.isFinite(hours) ? hours : 20, Number.isFinite(minutes) ? minutes : 0, 0, 0);
+  return target;
+}
+
+function nextReminderAt(time: string): Date {
+  const target = reminderDate(time);
   if (target.getTime() <= Date.now()) target.setDate(target.getDate() + 1);
   return target;
+}
+
+function isReminderDue(time: string): boolean {
+  return reminderDate(time).getTime() <= Date.now();
 }
 
 export function getNotificationPermission(): NotificationPermission | 'unsupported' {
@@ -32,42 +43,73 @@ export function stopReadingReminder(): void {
     window.clearTimeout(reminderTimer);
     reminderTimer = undefined;
   }
+  if (reminderHeartbeat !== undefined) {
+    window.clearInterval(reminderHeartbeat);
+    reminderHeartbeat = undefined;
+  }
 }
 
 async function showReadingReminder(): Promise<void> {
+  if (notificationInFlight) return;
   const settings = storageService.getReadingReminderSettings();
   const streak = storageService.getReadingStreak();
   const today = dayKey(new Date());
   if (!settings.enabled || settings.lastNotifiedDate === today || streak.lastReadDate === today) return;
+
+  notificationInFlight = true;
   const body = streak.currentStreak > 0
     ? `Sua chama está em ${streak.currentStreak} dia${streak.currentStreak === 1 ? '' : 's'}. Leia algumas páginas para protegê-la.`
     : 'Abra um tomo e registre algumas páginas para acender sua primeira chama.';
+  const options = {
+    body,
+    icon: '/vortex-icon.svg',
+    badge: '/vortex-icon.svg',
+    tag: 'vortex-reading-reminder',
+    data: { url: '/profile' },
+  };
 
   try {
-    const registration = await navigator.serviceWorker?.ready;
-    if (registration?.showNotification) {
-      await registration.showNotification('Uma página espera por você', {
-        body,
-        icon: '/vortex-icon.svg',
-        badge: '/vortex-icon.svg',
-        tag: 'vortex-reading-reminder',
-        data: { url: '/profile' },
-      });
-    } else if (typeof Notification !== 'undefined') {
-      new Notification('Uma página espera por você', { body, icon: '/vortex-icon.svg', tag: 'vortex-reading-reminder' });
+    let delivered = false;
+    if ('serviceWorker' in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        if (registration?.showNotification) {
+          await registration.showNotification('Uma página espera por você', options);
+          delivered = true;
+        }
+      } catch {
+        // Tenta a API de notificação da página quando o service worker não está pronto.
+      }
     }
-    storageService.saveReadingReminderSettings({ ...settings, lastNotifiedDate: today });
-  } catch {
-    // The browser may deny notification delivery even after permission is granted.
+    if (!delivered && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification('Uma página espera por você', options);
+      delivered = true;
+    }
+    if (delivered) storageService.saveReadingReminderSettings({ ...settings, lastNotifiedDate: today });
+  } finally {
+    notificationInFlight = false;
   }
+}
+
+function checkDueReminder(): void {
+  const settings = storageService.getReadingReminderSettings();
+  if (!settings.enabled || getNotificationPermission() !== 'granted' || !isReminderDue(settings.time)) return;
+  void showReadingReminder();
 }
 
 export function scheduleReadingReminder(): void {
   stopReadingReminder();
   const settings = storageService.getReadingReminderSettings();
   if (!settings.enabled || getNotificationPermission() !== 'granted') return;
+
   const target = nextReminderAt(settings.time);
   reminderTimer = window.setTimeout(() => {
-    void showReadingReminder().finally(scheduleReadingReminder);
+    reminderTimer = undefined;
+    checkDueReminder();
+    scheduleReadingReminder();
   }, Math.max(1000, target.getTime() - Date.now()));
+
+  // Recupera o lembrete quando o navegador retoma uma aba suspensa ou o relógio muda.
+  reminderHeartbeat = window.setInterval(checkDueReminder, 30_000);
+  checkDueReminder();
 }

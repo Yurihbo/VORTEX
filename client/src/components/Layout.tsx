@@ -46,6 +46,8 @@ export function Layout({ children }: LayoutProps) {
     };
     const handleReminderUpdated = () => scheduleReadingReminder();
     const handleStreakUpdated = () => scheduleReadingReminder();
+    const handleReminderResume = () => scheduleReadingReminder();
+    const handleVisibilityChange = () => { if (document.visibilityState === 'visible') scheduleReadingReminder(); };
     updateStandalone();
     setIsOnline(navigator.onLine);
     window.addEventListener('beforeinstallprompt', handleInstallPrompt);
@@ -55,6 +57,9 @@ export function Layout({ children }: LayoutProps) {
     window.addEventListener('vortex-profile-updated', handleProfileUpdated);
     window.addEventListener('vortex-reminder-updated', handleReminderUpdated);
     window.addEventListener('vortex-streak-updated', handleStreakUpdated);
+    window.addEventListener('focus', handleReminderResume);
+    window.addEventListener('pageshow', handleReminderResume);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     scheduleReadingReminder();
     media.addEventListener?.('change', updateStandalone);
     return () => {
@@ -64,6 +69,9 @@ export function Layout({ children }: LayoutProps) {
       window.removeEventListener('vortex-profile-updated', handleProfileUpdated);
       window.removeEventListener('vortex-reminder-updated', handleReminderUpdated);
       window.removeEventListener('vortex-streak-updated', handleStreakUpdated);
+      window.removeEventListener('focus', handleReminderResume);
+      window.removeEventListener('pageshow', handleReminderResume);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       media.removeEventListener?.('change', updateStandalone);
     };
   }, []);
