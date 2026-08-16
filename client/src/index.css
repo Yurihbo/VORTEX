@@ -1315,3 +1315,9 @@
 @media (max-width: 767px) { .profile-page-header { align-items: stretch; flex-direction: column; } .profile-collapse-actions { justify-content: stretch; } .profile-collapse-actions button { flex: 1 1 11rem; } }
 @media (max-width: 420px) { .profile-collapse-actions { flex-direction: column; } .profile-collapse-actions button { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { .profile-collapsible-content { transition: none; } }
+
+/* Perfil: ação principal sempre acessível durante a rolagem */
+.profile-save-action { bottom: 1.5rem; position: fixed; right: 1.5rem; z-index: 40; }
+.profile-save-action button { box-shadow: 0 14px 30px rgba(0,0,0,.32), 0 0 0 1px rgba(202,168,94,.22); }
+@media (max-width: 767px) { .profile-save-action { bottom: calc(5.25rem + env(safe-area-inset-bottom)); right: 1rem; } .profile-save-action button { min-height: 2.9rem; } }
+@media (max-width: 420px) { .profile-save-action { left: 1rem; right: 1rem; } .profile-save-action button { width: 100%; } }

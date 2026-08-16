@@ -485,7 +485,7 @@ export default function Profile() {
                       </div>
           </ProfileCollapsible>
 
-<div className="flex flex-wrap items-center justify-end gap-3"><Button type="submit" className="wand-click"><Save className="h-4 w-4 mr-2" /> Guardar perfil</Button></div>
+<div className="profile-save-action"><Button type="submit" className="wand-click"><Save className="h-4 w-4 mr-2" /> Guardar perfil</Button></div>
         </form>
 
         <ProfileCollapsible eyebrow="Ritmo de leitura" title="Calendário e lembrete">
