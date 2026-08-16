@@ -1,5 +1,5 @@
 import { ChangeEvent, FormEvent, PointerEvent, ReactNode, createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Award, Bell, BellOff, BookHeart, BookMarked, CalendarDays, Camera, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronsDown, ChevronsUp, Clock3, Copy, Crown, Download, FileDown, FileUp, Flame, ImagePlus, Medal, Save, Share2, Shield, Skull, Sparkles, Sword, UserRound, X } from 'lucide-react';
+import { Award, Bell, BellOff, BookHeart, BookMarked, CalendarDays, Camera, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronsDown, ChevronsUp, Clock3, Copy, Crown, Download, FileDown, FileUp, Flame, ImagePlus, Medal, Plus, Save, Share2, Trash2, Shield, Skull, Sparkles, Sword, UserRound, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -259,15 +259,43 @@ export default function Profile() {
       return;
     }
     persistReminderSettings({ ...reminderSettings, enabled: true });
-    toast.success(`Lembrete ativado para ${reminderSettings.time}.`);
+    toast.success(`Lembretes ativados para ${reminderSettings.times.join(', ')}.`);
   }
 
-  function updateReminderTime(time: string) {
-    const next = { ...reminderSettings, time };
+  function updateReminderTimes(times: string[]) {
+    const next = { ...reminderSettings, times: Array.from(new Set(times)).sort() };
     setReminderSettings(next);
     storageService.saveReadingReminderSettings(next);
     scheduleReadingReminder();
     window.dispatchEvent(new Event('vortex-reminder-updated'));
+  }
+
+  function updateReminderTime(index: number, time: string) {
+    if (reminderSettings.times.some((current, currentIndex) => currentIndex !== index && current === time)) {
+      toast.error('Esse horário já está configurado.');
+      return;
+    }
+    const times = [...reminderSettings.times];
+    times[index] = time;
+    updateReminderTimes(times);
+  }
+
+  function addReminderTime() {
+    const presets = ['08:00', '12:00', '15:00', '18:00', '20:00', '22:00'];
+    const nextTime = presets.find(time => !reminderSettings.times.includes(time)) || '21:00';
+    if (reminderSettings.times.includes(nextTime)) {
+      toast.info('Você já adicionou vários horários. Ajuste um horário existente para continuar.');
+      return;
+    }
+    updateReminderTimes([...reminderSettings.times, nextTime]);
+  }
+
+  function removeReminderTime(index: number) {
+    if (reminderSettings.times.length === 1) {
+      toast.info('Mantenha pelo menos um horário configurado.');
+      return;
+    }
+    updateReminderTimes(reminderSettings.times.filter((_, currentIndex) => currentIndex !== index));
   }
 
   function chooseFavoriteMedal(id: string) {
@@ -492,7 +520,7 @@ export default function Profile() {
         <div className="grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
           <Card className="vortex-card p-6 md:p-7"><div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Mapa de leitura</p><h2 className="mt-1 flex items-center gap-2 text-3xl font-serif"><CalendarDays className="h-6 w-6 text-[#caa85e]" /> Calendário da chama</h2><p className="mt-2 text-sm text-muted-foreground">Veja os dias exatos em que você registrou leitura.</p></div><div className="calendar-month-controls"><button type="button" className="calendar-nav-button wand-click" aria-label="Mês anterior" onClick={() => moveCalendarMonth(-1)}><ChevronLeft className="h-4 w-4" /></button><span>{calendarMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</span><button type="button" className="calendar-nav-button wand-click" aria-label="Próximo mês" onClick={() => moveCalendarMonth(1)}><ChevronRight className="h-4 w-4" /></button></div></div><div className="reading-calendar-grid mt-6">{WEEKDAY_LABELS.map(day => <span key={day} className="calendar-weekday">{day}</span>)}{calendarDays.map(day => { const key = formatDateKey(day); const isCurrentMonth = day.getMonth() === calendarMonth.getMonth(); const isRead = readingDateSet.has(key); const isToday = key === formatDateKey(new Date()); return <span key={key} className={`calendar-day ${isCurrentMonth ? '' : 'is-outside'} ${isRead ? 'is-read' : ''} ${isToday ? 'is-today' : ''}`} title={isRead ? `Leitura registrada em ${day.toLocaleDateString('pt-BR')}` : day.toLocaleDateString('pt-BR')}>{day.getDate()}</span>; })}</div><div className="calendar-legend"><span><i className="calendar-legend-dot is-read" /> Dia lido</span><span><i className="calendar-legend-dot is-today" /> Hoje</span><strong>{streak.readingDates?.length || 0} dias registrados</strong></div></Card>
 
-          <Card className="vortex-card p-6 md:p-7"><div className="mb-6"><p className="eyebrow">Compromisso diário</p><h2 className="mt-1 flex items-center gap-2 text-3xl font-serif"><Bell className="h-6 w-6 text-[#caa85e]" /> Lembrete de leitura</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Receba um lembrete local para proteger sua sequência antes que o dia termine.</p></div><div className="reminder-panel"><div className="flex items-center justify-between gap-4"><div><span className="field-label">Estado do lembrete</span><p className="mt-1 text-sm text-muted-foreground">{reminderSettings.enabled ? `Ativo todos os dias às ${reminderSettings.time}` : 'Desativado até você escolher ativá-lo.'}</p></div><button type="button" className={`reminder-toggle ${reminderSettings.enabled ? 'is-on' : ''}`} aria-pressed={reminderSettings.enabled} onClick={toggleReadingReminder}>{reminderSettings.enabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}<span>{reminderSettings.enabled ? 'Ativo' : 'Ativar'}</span></button></div><div className="mt-5 flex items-center justify-between gap-4"><label htmlFor="reading-reminder-time" className="field-label">Horário diário</label><Input id="reading-reminder-time" type="time" value={reminderSettings.time} onChange={event => updateReminderTime(event.target.value)} className="max-w-[132px]" /></div><p className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted-foreground"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#caa85e]" />{notificationPermission === 'granted' ? 'Permissão concedida. Ao instalar a Vortex, o lembrete pode continuar acompanhando sua jornada.' : notificationPermission === 'denied' ? 'Notificações bloqueadas. Libere-as nas configurações do navegador para ativar.' : 'Ao ativar, o navegador pedirá permissão para enviar lembretes locais.'}</p></div></Card>
+          <Card className="vortex-card p-6 md:p-7"><div className="mb-6"><p className="eyebrow">Compromisso diário</p><h2 className="mt-1 flex items-center gap-2 text-3xl font-serif"><Bell className="h-6 w-6 text-[#caa85e]" /> Lembrete de leitura</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Receba um lembrete local para proteger sua sequência antes que o dia termine.</p></div><div className="reminder-panel"><div className="flex items-center justify-between gap-4"><div><span className="field-label">Estado do lembrete</span><p className="mt-1 text-sm text-muted-foreground">{reminderSettings.enabled ? `Ativo todos os dias às ${reminderSettings.times.join(', ')}` : 'Desativado até você escolher ativá-lo.'}</p></div><button type="button" className={`reminder-toggle ${reminderSettings.enabled ? 'is-on' : ''}`} aria-pressed={reminderSettings.enabled} onClick={toggleReadingReminder}>{reminderSettings.enabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}<span>{reminderSettings.enabled ? 'Ativo' : 'Ativar'}</span></button></div><div className="mt-5 space-y-3"><div className="flex items-center justify-between gap-4"><span className="field-label">Horários diários</span><Button type="button" variant="outline" size="sm" className="wand-click" onClick={addReminderTime}><Plus className="mr-1.5 h-3.5 w-3.5" /> Adicionar horário</Button></div><div className="reminder-times-list">{reminderSettings.times.map((time, index) => <div key={`${time}-${index}`} className="reminder-time-row"><label htmlFor={`reading-reminder-time-${index}`} className="sr-only">Horário do lembrete {index + 1}</label><Input id={`reading-reminder-time-${index}`} type="time" value={time} onChange={event => updateReminderTime(index, event.target.value)} className="max-w-[132px]" /><button type="button" className="reminder-time-remove wand-click" aria-label={`Remover horário ${time}`} onClick={() => removeReminderTime(index)} disabled={reminderSettings.times.length === 1}><Trash2 className="h-4 w-4" /></button></div>)}</div><p className="text-xs text-muted-foreground">Você receberá um lembrete em cada horário enquanto o site ou app instalado estiver ativo.</p></div><p className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted-foreground"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#caa85e]" />{notificationPermission === 'granted' ? 'Permissão concedida. Ao instalar a Vortex, o lembrete pode continuar acompanhando sua jornada.' : notificationPermission === 'denied' ? 'Notificações bloqueadas. Libere-as nas configurações do navegador para ativar.' : 'Ao ativar, o navegador pedirá permissão para enviar lembretes locais.'}</p></div></Card>
         </div>
 
                 </ProfileCollapsible>

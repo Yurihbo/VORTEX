@@ -42,8 +42,18 @@ const DEFAULT_PROFILE: UserProfile = {
 };
 const DEFAULT_REMINDER: ReadingReminderSettings = {
   enabled: false,
-  time: '20:00',
+  times: ['20:00'],
 };
+
+const REMINDER_TIME_PATTERN = /^([01]\\d|2[0-3]):[0-5]\\d$/;
+
+function normalizeReminderTimes(value: unknown, legacyTime?: unknown): string[] {
+  const candidates = Array.isArray(value) ? value : [legacyTime ?? value];
+  const normalized = candidates
+    .map(time => String(time ?? '').trim())
+    .filter(time => REMINDER_TIME_PATTERN.test(time));
+  return Array.from(new Set(normalized)).sort();
+}
 
 // Default demo books
 const DEFAULT_BOOKS: Book[] = [
@@ -362,13 +372,26 @@ export const storageService = {
       const stored = localStorage.getItem(STORAGE_KEYS.READING_REMINDER);
       if (!stored) return { ...DEFAULT_REMINDER };
       const parsed = JSON.parse(stored) as Partial<ReadingReminderSettings>;
-      return { ...DEFAULT_REMINDER, ...parsed, enabled: Boolean(parsed.enabled), time: /^([01]\\d|2[0-3]):[0-5]\\d$/.test(String(parsed.time)) ? String(parsed.time) : DEFAULT_REMINDER.time };
+      const times = normalizeReminderTimes(parsed.times, parsed.time);
+      return {
+        ...DEFAULT_REMINDER,
+        ...parsed,
+        enabled: Boolean(parsed.enabled),
+        times: times.length ? times : [...DEFAULT_REMINDER.times],
+        time: undefined,
+      };
     } catch {
       return { ...DEFAULT_REMINDER };
     }
   },
   saveReadingReminderSettings(settings: ReadingReminderSettings): void {
-    localStorage.setItem(STORAGE_KEYS.READING_REMINDER, JSON.stringify({ ...DEFAULT_REMINDER, ...settings }));
+    const times = normalizeReminderTimes(settings.times, settings.time);
+    localStorage.setItem(STORAGE_KEYS.READING_REMINDER, JSON.stringify({
+      ...DEFAULT_REMINDER,
+      ...settings,
+      times: times.length ? times : [...DEFAULT_REMINDER.times],
+      time: undefined,
+    }));
   },
   // Export/Import
   exportLibrary(): string {

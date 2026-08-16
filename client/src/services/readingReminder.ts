@@ -18,14 +18,26 @@ function reminderDate(time: string, date = new Date()): Date {
   return target;
 }
 
-function nextReminderAt(time: string): Date {
-  const target = reminderDate(time);
-  if (target.getTime() <= Date.now()) target.setDate(target.getDate() + 1);
-  return target;
+function sortedTimes(times: string[]): string[] {
+  return Array.from(new Set(times)).sort();
 }
 
-function isReminderDue(time: string): boolean {
-  return reminderDate(time).getTime() <= Date.now();
+function nextReminderAt(times: string[]): Date {
+  const now = Date.now();
+  const nextToday = sortedTimes(times).map(time => reminderDate(time)).find(target => target.getTime() > now);
+  if (nextToday) return nextToday;
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return reminderDate(sortedTimes(times)[0] || '20:00', tomorrow);
+}
+
+function dueReminderSlot(times: string[], settings: { lastNotifiedDate?: string; lastNotifiedSlot?: string; lastNotifiedSlots?: string[] }): string | undefined {
+  const today = dayKey(new Date());
+  const due = sortedTimes(times).filter(time => reminderDate(time).getTime() <= Date.now());
+  if (!due.length) return undefined;
+  if (settings.lastNotifiedDate !== today) return due[due.length - 1];
+  const notifiedSlots = new Set(settings.lastNotifiedSlots || (settings.lastNotifiedSlot ? [settings.lastNotifiedSlot] : []));
+  return due.filter(time => !notifiedSlots.has(time)).at(-1);
 }
 
 export function getNotificationPermission(): NotificationPermission | 'unsupported' {
@@ -49,23 +61,23 @@ export function stopReadingReminder(): void {
   }
 }
 
-async function showReadingReminder(): Promise<void> {
+async function showReadingReminder(slot: string): Promise<void> {
   if (notificationInFlight) return;
   const settings = storageService.getReadingReminderSettings();
   const streak = storageService.getReadingStreak();
   const today = dayKey(new Date());
-  if (!settings.enabled || settings.lastNotifiedDate === today || streak.lastReadDate === today) return;
+  if (!settings.enabled || settings.lastNotifiedDate === today && settings.lastNotifiedSlot === slot) return;
 
   notificationInFlight = true;
   const body = streak.currentStreak > 0
     ? `Sua chama está em ${streak.currentStreak} dia${streak.currentStreak === 1 ? '' : 's'}. Leia algumas páginas para protegê-la.`
     : 'Abra um tomo e registre algumas páginas para acender sua primeira chama.';
   const options = {
-    body,
+    body: `${body} Lembrete das ${slot}.`,
     icon: '/vortex-icon.svg',
     badge: '/vortex-icon.svg',
-    tag: 'vortex-reading-reminder',
-    data: { url: '/profile' },
+    tag: `vortex-reading-reminder-${slot.replace(':', '-')}`,
+    data: { url: '/profile', reminderSlot: slot },
   };
 
   try {
@@ -85,7 +97,10 @@ async function showReadingReminder(): Promise<void> {
       new Notification('Uma página espera por você', options);
       delivered = true;
     }
-    if (delivered) storageService.saveReadingReminderSettings({ ...settings, lastNotifiedDate: today });
+    if (delivered) {
+      const notifiedSlots = settings.lastNotifiedDate === today ? [...(settings.lastNotifiedSlots || (settings.lastNotifiedSlot ? [settings.lastNotifiedSlot] : [])), slot] : [slot];
+      storageService.saveReadingReminderSettings({ ...settings, lastNotifiedDate: today, lastNotifiedSlot: slot, lastNotifiedSlots: Array.from(new Set(notifiedSlots)) });
+    }
   } finally {
     notificationInFlight = false;
   }
@@ -93,16 +108,17 @@ async function showReadingReminder(): Promise<void> {
 
 function checkDueReminder(): void {
   const settings = storageService.getReadingReminderSettings();
-  if (!settings.enabled || getNotificationPermission() !== 'granted' || !isReminderDue(settings.time)) return;
-  void showReadingReminder();
+  if (!settings.enabled || getNotificationPermission() !== 'granted') return;
+  const slot = dueReminderSlot(settings.times, settings);
+  if (slot) void showReadingReminder(slot);
 }
 
 export function scheduleReadingReminder(): void {
   stopReadingReminder();
   const settings = storageService.getReadingReminderSettings();
-  if (!settings.enabled || getNotificationPermission() !== 'granted') return;
+  if (!settings.enabled || getNotificationPermission() !== 'granted' || !settings.times.length) return;
 
-  const target = nextReminderAt(settings.time);
+  const target = nextReminderAt(settings.times);
   reminderTimer = window.setTimeout(() => {
     reminderTimer = undefined;
     checkDueReminder();

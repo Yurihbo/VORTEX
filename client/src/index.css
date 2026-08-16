@@ -1321,3 +1321,12 @@
 .profile-save-action button { box-shadow: 0 14px 30px rgba(0,0,0,.32), 0 0 0 1px rgba(202,168,94,.22); }
 @media (max-width: 767px) { .profile-save-action { bottom: calc(5.25rem + env(safe-area-inset-bottom)); right: 1rem; } .profile-save-action button { min-height: 2.9rem; } }
 @media (max-width: 420px) { .profile-save-action { left: 1rem; right: 1rem; } .profile-save-action button { width: 100%; } }
+
+/* Perfil: múltiplos horários de lembrete */
+.reminder-times-list { display: grid; gap: .55rem; }
+.reminder-time-row { align-items: center; display: flex; gap: .55rem; }
+.reminder-time-row input { background: rgba(9,14,28,.7); }
+.reminder-time-remove { align-items: center; border: 1px solid rgba(202,168,94,.25); border-radius: .35rem; color: #caa85e; display: inline-flex; height: 2.35rem; justify-content: center; transition: background-color .18s ease, color .18s ease, opacity .18s ease; width: 2.35rem; }
+.reminder-time-remove:hover:not(:disabled) { background: rgba(202,168,94,.12); color: #f2df9e; }
+.reminder-time-remove:disabled { cursor: not-allowed; opacity: .35; }
+@media (max-width: 420px) { .reminder-times-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } .reminder-time-row input { max-width: none; min-width: 0; width: 100%; } }

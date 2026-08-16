@@ -82,6 +82,10 @@ export interface UserProfile {
 
 export interface ReadingReminderSettings {
   enabled: boolean;
-  time: string;
+  times: string[];
+  /** Mantido para compatibilidade com versões anteriores do VORTEX. */
+  time?: string;
   lastNotifiedDate?: string;
+  lastNotifiedSlot?: string;
+  lastNotifiedSlots?: string[];
 }
