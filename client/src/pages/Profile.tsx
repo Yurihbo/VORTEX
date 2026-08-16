@@ -1,5 +1,5 @@
-import { ChangeEvent, FormEvent, PointerEvent, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { Award, Bell, BellOff, BookHeart, BookMarked, CalendarDays, Camera, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Clock3, Copy, Crown, Download, FileDown, FileUp, Flame, ImagePlus, Medal, Save, Share2, Shield, Skull, Sparkles, Sword, UserRound, X } from 'lucide-react';
+import { ChangeEvent, FormEvent, PointerEvent, ReactNode, createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Award, Bell, BellOff, BookHeart, BookMarked, CalendarDays, Camera, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronsDown, ChevronsUp, Clock3, Copy, Crown, Download, FileDown, FileUp, Flame, ImagePlus, Medal, Save, Share2, Shield, Skull, Sparkles, Sword, UserRound, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -80,9 +80,19 @@ function medalProgress(rule: MedalRule, booksRead: number, hoursRead: number) {
   return { current, percentage: Math.min(100, Math.round((current / rule.target) * 100)), unlocked: current >= rule.target };
 }
 
+type ProfileCollapseCommand = { open: boolean; sequence: number } | null;
+const ProfileCollapseContext = createContext<ProfileCollapseCommand>(null);
+
 function ProfileCollapsible({ eyebrow, title, children }: { eyebrow: string; title: string; children: ReactNode }) {
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+  const command = useContext(ProfileCollapseContext);
+
+  useEffect(() => {
+    if (command && detailsRef.current) detailsRef.current.open = command.open;
+  }, [command]);
+
   return (
-    <details className="profile-collapsible">
+    <details ref={detailsRef} className="profile-collapsible">
       <summary className="profile-collapsible-summary">
         <span className="min-w-0">
           <span className="eyebrow">{eyebrow}</span>
@@ -198,6 +208,7 @@ export default function Profile() {
   const [reminderSettings, setReminderSettings] = useState<ReadingReminderSettings>(() => storageService.getReadingReminderSettings());
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => getNotificationPermission());
   const [calendarMonth, setCalendarMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [collapseCommand, setCollapseCommand] = useState<ProfileCollapseCommand>(null);
   const [cropSource, setCropSource] = useState<string | null>(null);
   const [cropZoom, setCropZoom] = useState(1);
   const [cropPosition, setCropPosition] = useState<CropPosition>({ x: 0, y: 0 });
@@ -427,8 +438,9 @@ export default function Profile() {
 
   return (
     <Layout>
+      <ProfileCollapseContext.Provider value={collapseCommand}>
       <div className="max-w-5xl space-y-7 animate-fade-in">
-        <header><p className="eyebrow">Identidade do guardião</p><h1 className="text-5xl font-serif mt-2">Perfil</h1><p className="text-muted-foreground mt-2">Personalize o rosto, as memórias e as constelações da sua biblioteca.</p></header>
+        <header className="profile-page-header"><div><p className="eyebrow">Identidade do guardião</p><h1 className="text-5xl font-serif mt-2">Perfil</h1><p className="text-muted-foreground mt-2">Personalize o rosto, as memórias e as constelações da sua biblioteca.</p></div><div className="profile-collapse-actions" role="group" aria-label="Controles das seções do perfil"><Button type="button" variant="outline" className="wand-click" onClick={() => setCollapseCommand({ open: true, sequence: Date.now() })}><ChevronsDown className="mr-2 h-4 w-4" /> Expandir tudo</Button><Button type="button" variant="outline" className="wand-click" onClick={() => setCollapseCommand({ open: false, sequence: Date.now() })}><ChevronsUp className="mr-2 h-4 w-4" /> Recolher tudo</Button></div></header>
 
         <form onSubmit={saveProfile} className="space-y-6">
           <Card className="vortex-card profile-hero-card p-6 md:p-9">
@@ -554,6 +566,7 @@ export default function Profile() {
       </div>
 
       {cropSource && <div className="crop-modal-backdrop" role="presentation"><section className="crop-modal" role="dialog" aria-modal="true" aria-labelledby="crop-title"><div className="flex items-start justify-between gap-4"><div><p className="eyebrow">Ateliê do retrato</p><h2 id="crop-title" className="mt-1 text-3xl font-serif">Recorte e ajuste</h2><p className="mt-2 text-sm text-muted-foreground">Arraste a imagem para enquadrar e use o controle para aproximar.</p></div><button type="button" className="crop-close wand-click" aria-label="Cancelar edição da foto" onClick={cancelCrop}><X className="h-5 w-5" /></button></div><div className="crop-stage" onPointerDown={handleCropPointerDown} onPointerMove={handleCropPointerMove} onPointerUp={handleCropPointerUp} onPointerCancel={handleCropPointerUp} role="application" aria-label="Área de recorte arrastável"><img src={cropSource} alt="Pré-visualização do recorte da foto" draggable="false" style={{ transform: `translate(${cropPosition.x}px, ${cropPosition.y}px) scale(${cropZoom})` }} /><span className="crop-stage-rune">ᛟ</span></div><div className="crop-controls"><label htmlFor="crop-zoom" className="field-label"><span className="flex items-center justify-between"><span>Zoom</span><strong>{cropZoom.toFixed(1)}×</strong></span><input id="crop-zoom" type="range" min="1" max="2.5" step="0.05" value={cropZoom} onChange={event => setCropZoom(Number(event.target.value))} /></label></div><div className="flex justify-end gap-3"><Button type="button" variant="outline" onClick={cancelCrop}>Cancelar</Button><Button type="button" className="wand-click" onClick={confirmCrop}><ImagePlus className="h-4 w-4 mr-2" /> Usar este recorte</Button></div></section></div>}
+      </ProfileCollapseContext.Provider>
     </Layout>
   );
 }

@@ -1305,3 +1305,13 @@
 .profile-collapsible-grid { display: grid; gap: 1.5rem; }
 @media (min-width: 1024px) { .profile-collapsible-grid { grid-template-columns: 1.1fr .9fr; } }
 @media (max-width: 640px) { .profile-collapsible-summary { min-height: 4.5rem; padding: .9rem 1rem; } .profile-collapsible-content { padding: .75rem; } }
+
+/* Perfil: controles globais e transição suave das seções */
+.profile-page-header { align-items: flex-end; display: flex; gap: 1.25rem; justify-content: space-between; }
+.profile-collapse-actions { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: flex-end; }
+.profile-collapse-actions button { min-height: 2.45rem; white-space: nowrap; }
+.profile-collapsible-content { max-height: 5000px; opacity: 1; overflow: hidden; padding: 1.25rem; transform: translateY(0); transition: max-height .38s cubic-bezier(.22,1,.36,1), opacity .24s ease, padding .38s ease, transform .38s cubic-bezier(.22,1,.36,1); }
+.profile-collapsible:not([open]) > .profile-collapsible-content { max-height: 0; opacity: 0; padding-bottom: 0; padding-top: 0; transform: translateY(-8px); }
+@media (max-width: 767px) { .profile-page-header { align-items: stretch; flex-direction: column; } .profile-collapse-actions { justify-content: stretch; } .profile-collapse-actions button { flex: 1 1 11rem; } }
+@media (max-width: 420px) { .profile-collapse-actions { flex-direction: column; } .profile-collapse-actions button { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .profile-collapsible-content { transition: none; } }
