@@ -241,14 +241,22 @@ export const storageService = {
     }
   },
 
-  saveBooks(books: Book[]): void {
+    saveBooks(books: Book[]): void {
     localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(books));
   },
-
-  addBook(book: Book): void {
+  addBook(book: Book): { coverRemoved: boolean } {
     const books = this.getBooks();
-    books.push(book);
-    this.saveBooks(books);
+    const nextBooks = [...books, book];
+    try {
+      this.saveBooks(nextBooks);
+      return { coverRemoved: false };
+    } catch (error) {
+      // Capas em base64 podem esgotar a quota do localStorage depois de vários cadastros.
+      // O livro continua sendo salvo com a capa visual padrão do VORTEX.
+      if (!book.coverUrl) throw error;
+      this.saveBooks([...books, { ...book, coverUrl: undefined }]);
+      return { coverRemoved: true };
+    }
   },
 
   updateBook(id: string, updates: Partial<Book>): void {

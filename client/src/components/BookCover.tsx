@@ -26,7 +26,7 @@ export function BookCover({ book, size = 'md', className = '' }: BookCoverProps)
 
   return (
     <div className={`vortex-book-artifact ${sizeClasses[size]} ${className}`} style={!image ? { background: fallback } : undefined} aria-label={`Capa de ${book.title}`}>
-      {image ? <img src={image} alt={`Capa de ${book.title}`} className="h-full w-full object-cover" loading="lazy" /> : <div className="relative h-full w-full p-3 flex flex-col justify-between text-[#f2e4bd]"><span className="text-[8px] tracking-[.24em] uppercase opacity-70">Vortex archive</span><div><div className="mb-2 h-px w-8 bg-[#caa85e]/70" /><p className="font-serif text-base leading-tight">{book.title}</p><p className="mt-1 text-[9px] opacity-70">{book.author}</p></div><span className="self-end text-lg opacity-60">✦</span></div>}
+      {image ? <img src={image} alt={`Capa de ${book.title}`} className="h-full w-full object-cover" loading="lazy" /> : <div className="relative h-full w-full p-3 flex flex-col justify-between text-[#f2e4bd]"><span className="text-[8px] tracking-[.24em] uppercase opacity-70">Vortex archive</span><div><div className="mb-2 h-px w-8 bg-[#caa85e]/70" /><p className="line-clamp-3 break-words text-center font-serif text-base leading-tight">{book.title}</p><p className="mt-1 line-clamp-1 text-center text-[9px] opacity-70">{book.author || 'Autor desconhecido'}</p></div><span className="self-end text-lg opacity-60">✦</span></div>}
       <div className="vortex-book-plate"><span>✦</span><span>V</span><span>✦</span></div>
       <div className="vortex-book-rune">ᛟ</div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/42 via-transparent to-white/5" />

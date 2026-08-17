@@ -356,13 +356,13 @@ export default function Library() {
                 </div>
 
                 <Link href={`/book/${book.id}`} className="block">
-                  <Card className="vortex-card p-4 h-full transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_16px_34px_rgba(0,0,0,.24)]">
+                  <Card className="library-book-card vortex-card flex flex-col p-4 h-full transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_16px_34px_rgba(0,0,0,.24)]">
                     <div className="flex justify-center py-2"><BookCover book={book} size="lg" /></div>
-                    <div className="mt-5">
+                    <div className="mt-5 flex min-h-[150px] flex-1 flex-col">
                       <p className={`eyebrow status-chip status-chip-${book.status}`}>{statusLabels[book.status]}</p>
                       <h2 className="mt-1 font-serif text-2xl leading-tight line-clamp-2 group-hover:text-[#caa85e] transition-colors">{book.title}</h2>
                       <p className="mt-1 text-sm text-muted-foreground line-clamp-1">{book.author}</p>
-                      <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+                      <div className="mt-auto pt-4 flex items-center justify-between text-xs text-muted-foreground">
                         <span>{book.genre}</span>
                         <span>{book.pages} pág.</span>
                       </div>

@@ -50,31 +50,33 @@ export default function AddBook() {
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    if (!form.title.trim() || !form.author.trim() || !form.pages) {
-      toast.error('Preencha título, autor e páginas para registrar o tomo.');
+    if (!form.title.trim()) {
+      toast.error('Informe pelo menos o título para registrar o tomo.');
       return;
     }
-    storageService.addBook({
+    const pages = Math.max(1, Number(form.pages) || 1);
+    const author = form.author.trim() || 'Autor desconhecido';
+    const result = storageService.addBook({
       id: crypto.randomUUID(),
       title: form.title.trim(),
-      author: form.author.trim(),
+      author,
       isbn: form.isbn.trim(),
       publisher: form.publisher.trim(),
       year: form.year ? Number(form.year) : undefined,
-      pages: Number(form.pages),
+      pages,
       genre: form.genre,
       description: form.description.trim() || 'Uma nova história aguarda ser descoberta.',
       coverUrl: coverPreview || form.coverUrl.trim() || undefined,
       status: form.status,
       isFavorite: false,
       rating: form.rating ? Number(form.rating) : undefined,
-      currentPage: form.status === 'completed' ? Number(form.pages) : 0,
+      currentPage: form.status === 'completed' ? pages : 0,
       completedDate: form.status === 'completed' ? new Date().toISOString() : undefined,
       addedDate: new Date().toISOString(),
       notes: [],
       quotes: [],
     });
-    toast.success('Novo tomo registrado na Vortex.');
+    toast.success(result.coverRemoved ? 'Novo tomo registrado com a capa padrão da Vortex.' : 'Novo tomo registrado na Vortex.');
     navigate('/library');
   }
 
@@ -87,11 +89,11 @@ export default function AddBook() {
           <form onSubmit={submit} className="space-y-7">
             <div className="grid gap-5 md:grid-cols-2">
               <label className="field-label">Título *<Input value={form.title} onChange={e => update('title', e.target.value)} placeholder="Ex.: O nome do vento" required /></label>
-              <label className="field-label">Autor *<Input value={form.author} onChange={e => update('author', e.target.value)} placeholder="Nome do autor" required /></label>
+              <label className="field-label">Autor<Input value={form.author} onChange={e => update('author', e.target.value)} placeholder="Nome do autor (opcional)" /></label>
               <label className="field-label">ISBN<Input value={form.isbn} onChange={e => update('isbn', e.target.value)} placeholder="978-..." /></label>
               <label className="field-label">Editora<Input value={form.publisher} onChange={e => update('publisher', e.target.value)} placeholder="Editora" /></label>
               <label className="field-label">Ano<Input type="number" value={form.year} onChange={e => update('year', e.target.value)} placeholder="2024" /></label>
-              <label className="field-label">Páginas *<Input type="number" min="1" value={form.pages} onChange={e => update('pages', e.target.value)} placeholder="320" required /></label>
+              <label className="field-label">Páginas<Input type="number" min="1" value={form.pages} onChange={e => update('pages', e.target.value)} placeholder="320 (opcional)" /></label>
               <label className="field-label">Gênero<select value={form.genre} onChange={e => update('genre', e.target.value)} className="vortex-select h-10 rounded-md border border-input bg-background px-3 text-sm"><option>Fantasia</option><option>Ficção Científica</option><option>Ficção</option><option>História</option><option>Filosofia</option><option>Tecnologia</option><option>Romance</option><option>Não ficção</option></select></label>
               <label className="field-label">Status<select value={form.status} onChange={e => update('status', e.target.value)} className="vortex-select h-10 rounded-md border border-input bg-background px-3 text-sm"><option value="want-to-read">Quero ler</option><option value="reading">Em leitura</option><option value="paused">Pausado</option><option value="completed">Concluído</option></select></label>
               <label className="field-label">Avaliação<select value={form.rating} onChange={e => update('rating', e.target.value)} className="vortex-select h-10 rounded-md border border-input bg-background px-3 text-sm"><option value="">Sem avaliação</option><option value="5">★★★★★</option><option value="4">★★★★</option><option value="3">★★★</option><option value="2">★★</option><option value="1">★</option></select></label>
