@@ -262,13 +262,14 @@ export const storageService = {
     return { coverRemoved: false };
   },
 
-  updateBook(id: string, updates: Partial<Book>): void {
+  async updateBook(id: string, updates: Partial<Book>): Promise<void> {
     const books = this.getBooks();
     const index = books.findIndex(b => b.id === id);
-    if (index !== -1) {
-      books[index] = { ...books[index], ...updates };
-      this.saveBooks(books);
-    }
+    if (index === -1) return;
+    const previous = books[index];
+    const next = { ...previous, ...updates };
+    await this.saveBooks(books.map((book, currentIndex) => currentIndex === index ? next : book));
+    if (previous.coverUrl?.startsWith('idb-cover:') && !next.coverUrl) await deleteBookCover(id);
   },
 
   async deleteBook(id: string): Promise<void> {

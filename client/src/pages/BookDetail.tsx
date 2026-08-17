@@ -1,6 +1,6 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
-import { ArrowLeft, BookOpen, Check, Heart, MessageSquarePlus, Minus, Plus, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, Check, Heart, ImagePlus, MessageSquarePlus, Minus, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Layout } from '@/components/Layout';
 import { BookCover } from '@/components/BookCover';
@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { storageService } from '@/services/storage';
+import { getBookCover, isStoredCover } from '@/services/bookMedia';
 import { Book, BookStatus } from '@/types/book';
 
 const statusLabels: Record<BookStatus, string> = {
@@ -26,12 +27,18 @@ export default function BookDetail() {
   const [noteInput, setNoteInput] = useState('');
   const [quoteInput, setQuoteInput] = useState('');
   const [quotePage, setQuotePage] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editCoverPreview, setEditCoverPreview] = useState('');
+  const [editStoredCover, setEditStoredCover] = useState('');
+  const [editForm, setEditForm] = useState({ title: '', author: '', isbn: '', publisher: '', year: '', pages: '', genre: '', description: '', coverUrl: '', status: 'want-to-read' as BookStatus, rating: '' });
 
   useEffect(() => {
     const found = id ? storageService.getBookById(id) : undefined;
     if (found) {
       setBook(found);
       setPageInput(String(found.currentPage));
+      setEditForm({ title: found.title, author: found.author, isbn: found.isbn || '', publisher: found.publisher || '', year: found.year ? String(found.year) : '', pages: String(found.pages), genre: found.genre, description: found.description, coverUrl: found.coverUrl || '', status: found.status, rating: found.rating ? String(found.rating) : '' });
+      if (isStoredCover(found.coverUrl)) void getBookCover(found.id).then(url => setEditStoredCover(url || '')).catch(() => setEditStoredCover(''));
     }
   }, [id]);
 
@@ -43,9 +50,44 @@ export default function BookDetail() {
 
   function saveBook(updates: Partial<Book>, message: string) {
     const next = { ...book!, ...updates };
-    storageService.updateBook(book!.id, updates);
+    void storageService.updateBook(book!.id, updates).then(() => toast.success(message)).catch(() => toast.error('Não foi possível salvar as alterações.'));
     setBook(next);
-    toast.success(message);
+  }
+
+  function updateEditField(field: string, value: string) {
+    setEditForm(current => ({ ...current, [field]: value }));
+  }
+
+  function handleEditCover(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Escolha uma imagem válida.'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('A imagem deve ter no máximo 5 MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => { setEditCoverPreview(String(reader.result || '')); setEditForm(current => ({ ...current, coverUrl: '' })); };
+    reader.readAsDataURL(file);
+  }
+
+  async function saveEditedBook(event: FormEvent) {
+    event.preventDefault();
+    if (!editForm.title.trim()) { toast.error('O título é obrigatório.'); return; }
+    const pages = Math.max(1, Number(editForm.pages) || 1);
+    const updates: Partial<Book> = {
+      title: editForm.title.trim(), author: editForm.author.trim() || 'Autor desconhecido', isbn: editForm.isbn.trim(), publisher: editForm.publisher.trim(),
+      year: editForm.year ? Number(editForm.year) : undefined, pages, genre: editForm.genre || 'Fantasia', description: editForm.description.trim() || 'Uma nova história aguarda ser descoberta.',
+      coverUrl: editCoverPreview || editForm.coverUrl.trim() || undefined, status: editForm.status, rating: editForm.rating ? Number(editForm.rating) : undefined,
+      currentPage: Math.min(book!.currentPage, pages),
+    };
+    try {
+      await storageService.updateBook(book!.id, updates);
+      const next = { ...book!, ...updates };
+      setBook(next);
+      setPageInput(String(next.currentPage));
+      setEditCoverPreview('');
+      setEditStoredCover('');
+      setIsEditing(false);
+      toast.success('Informações do tomo atualizadas.');
+    } catch { toast.error('Não foi possível salvar o tomo e sua capa.'); }
   }
 
   function handleProgress(event: FormEvent) {
@@ -87,8 +129,10 @@ export default function BookDetail() {
       <div className="space-y-8 animate-fade-in">
         <div className="flex items-center justify-between gap-4">
           <Link href="/library"><a className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"><ArrowLeft className="h-4 w-4" /> Minha biblioteca</a></Link>
-          <Button variant="outline" size="sm" onClick={deleteBook} className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Excluir tomo</Button>
+          <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => setIsEditing(current => !current)}><Save className="h-4 w-4 mr-2" /> {isEditing ? 'Fechar edição' : 'Editar tomo'}</Button><Button variant="outline" size="sm" onClick={deleteBook} className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Excluir tomo</Button></div>
         </div>
+
+        {isEditing && <Card className="vortex-card p-6 md:p-8"><div className="flex items-start justify-between gap-4"><div><p className="eyebrow">Ateliê do tomo</p><h2 className="mt-1 text-3xl font-serif">Editar informações</h2><p className="mt-2 text-sm text-muted-foreground">Atualize os dados e a capa sem precisar cadastrar o livro novamente.</p></div><button type="button" className="wand-click" aria-label="Fechar edição" onClick={() => setIsEditing(false)}><X className="h-5 w-5" /></button></div><form onSubmit={saveEditedBook} className="mt-6 space-y-5"><div className="grid gap-4 md:grid-cols-2"><label className="field-label">Título *<Input value={editForm.title} onChange={event => updateEditField('title', event.target.value)} required /></label><label className="field-label">Autor<Input value={editForm.author} onChange={event => updateEditField('author', event.target.value)} /></label><label className="field-label">ISBN<Input value={editForm.isbn} onChange={event => updateEditField('isbn', event.target.value)} /></label><label className="field-label">Editora<Input value={editForm.publisher} onChange={event => updateEditField('publisher', event.target.value)} /></label><label className="field-label">Ano<Input type="number" value={editForm.year} onChange={event => updateEditField('year', event.target.value)} /></label><label className="field-label">Páginas<Input type="number" min="1" value={editForm.pages} onChange={event => updateEditField('pages', event.target.value)} /></label><label className="field-label">Gênero<select value={editForm.genre} onChange={event => updateEditField('genre', event.target.value)} className="vortex-select h-10 rounded-md border border-input bg-background px-3 text-sm"><option>Fantasia</option><option>Ficção Científica</option><option>Ficção</option><option>História</option><option>Filosofia</option><option>Tecnologia</option><option>Romance</option><option>Não ficção</option></select></label><label className="field-label">Status<select value={editForm.status} onChange={event => updateEditField('status', event.target.value)} className="vortex-select h-10 rounded-md border border-input bg-background px-3 text-sm"><option value="want-to-read">Quero ler</option><option value="reading">Em leitura</option><option value="paused">Pausado</option><option value="completed">Concluído</option></select></label><label className="field-label">Avaliação<select value={editForm.rating} onChange={event => updateEditField('rating', event.target.value)} className="vortex-select h-10 rounded-md border border-input bg-background px-3 text-sm"><option value="">Sem avaliação</option><option value="5">★★★★★</option><option value="4">★★★★</option><option value="3">★★★</option><option value="2">★★</option><option value="1">★</option></select></label></div><label className="field-label">Descrição<Textarea rows={4} value={editForm.description} onChange={event => updateEditField('description', event.target.value)} /></label><div className="rounded-lg border border-[#caa85e]/30 bg-[#caa85e]/5 p-4"><div className="flex items-center justify-between gap-3"><span className="field-label">Capa do tomo</span>{(editCoverPreview || editForm.coverUrl) && <Button type="button" variant="ghost" size="sm" onClick={() => { setEditCoverPreview(''); setEditStoredCover(''); setEditForm(current => ({ ...current, coverUrl: '' })); }}><X className="h-4 w-4 mr-1" /> Remover capa</Button>}</div><div className="mt-3 flex flex-wrap items-center gap-4"><div className="h-28 w-20 overflow-hidden rounded border border-[#caa85e]/40 bg-background">{editCoverPreview || editStoredCover || (editForm.coverUrl && !isStoredCover(editForm.coverUrl)) ? <img src={editCoverPreview || editStoredCover || editForm.coverUrl} alt="Prévia da capa" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center"><ImagePlus className="h-6 w-6 text-[#caa85e]" /></div>}</div><label htmlFor="edit-cover-upload" className="cover-upload-button"><Upload className="h-4 w-4" /> Trocar imagem</label><input id="edit-cover-upload" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleEditCover} className="sr-only" /></div></div><div className="flex justify-end gap-3"><Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancelar</Button><Button type="submit" className="wand-click"><Save className="h-4 w-4 mr-2" /> Salvar alterações</Button></div></form></Card>}
 
         <section className="vortex-grimoire relative overflow-hidden rounded-2xl border border-[#caa85e]/30 p-6 md:p-10">
           <div className="absolute right-6 top-5 text-5xl text-[#caa85e]/15 select-none">◈</div>
