@@ -1,4 +1,5 @@
 import { Book, ReadingGoal, Achievement, ReadingStreak, LibraryStats, ReadingReminderSettings, UserProfile } from '@/types/book';
+import { coverReference, deleteBookCover, saveBookCover } from '@/services/bookMedia';
 
 const STORAGE_KEYS = {
   BOOKS: 'vortex_books',
@@ -235,28 +236,30 @@ export const storageService = {
   getBooks(): Book[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.BOOKS);
-      return data ? JSON.parse(data) : DEFAULT_BOOKS;
+      const books = data ? JSON.parse(data) as Book[] : DEFAULT_BOOKS;
+      const legacyCovers = books.filter(book => Boolean(book.coverUrl?.startsWith('data:')));
+      if (legacyCovers.length) {
+        const metadata = books.map(book => book.coverUrl?.startsWith('data:') ? { ...book, coverUrl: coverReference(book.id) } : book);
+        void Promise.all(legacyCovers.map(book => saveBookCover(book.id, book.coverUrl!)))
+          .then(() => localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(metadata)))
+          .catch(() => undefined);
+      }
+      return books;
     } catch {
       return DEFAULT_BOOKS;
     }
   },
 
-    saveBooks(books: Book[]): void {
-    localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(books));
+  async saveBooks(books: Book[]): Promise<void> {
+    const booksWithCovers = books.filter(book => Boolean(book.coverUrl?.startsWith('data:')));
+    const metadata = books.map(book => book.coverUrl?.startsWith('data:') ? { ...book, coverUrl: coverReference(book.id) } : book);
+    await Promise.all(booksWithCovers.map(book => saveBookCover(book.id, book.coverUrl!)));
+    localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(metadata));
   },
-  addBook(book: Book): { coverRemoved: boolean } {
+  async addBook(book: Book): Promise<{ coverRemoved: boolean }> {
     const books = this.getBooks();
-    const nextBooks = [...books, book];
-    try {
-      this.saveBooks(nextBooks);
-      return { coverRemoved: false };
-    } catch (error) {
-      // Capas em base64 podem esgotar a quota do localStorage depois de vários cadastros.
-      // O livro continua sendo salvo com a capa visual padrão do VORTEX.
-      if (!book.coverUrl) throw error;
-      this.saveBooks([...books, { ...book, coverUrl: undefined }]);
-      return { coverRemoved: true };
-    }
+    await this.saveBooks([...books, book]);
+    return { coverRemoved: false };
   },
 
   updateBook(id: string, updates: Partial<Book>): void {
@@ -268,9 +271,11 @@ export const storageService = {
     }
   },
 
-  deleteBook(id: string): void {
+  async deleteBook(id: string): Promise<void> {
     const books = this.getBooks();
-    this.saveBooks(books.filter(b => b.id !== id));
+    const book = books.find(item => item.id === id);
+    await this.saveBooks(books.filter(b => b.id !== id));
+    if (book?.coverUrl?.startsWith('idb-cover:')) await deleteBookCover(id);
   },
 
   getBookById(id: string): Book | undefined {

@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Book } from '@/types/book';
+import { getBookCover, isStoredCover } from '@/services/bookMedia';
 
 interface BookCoverProps {
   book: Book;
@@ -21,7 +23,27 @@ const fallbackCovers = [
 
 export function BookCover({ book, size = 'md', className = '' }: BookCoverProps) {
   const sizeClasses = { sm: 'w-16 h-24', md: 'w-28 h-40', lg: 'w-48 h-72' };
-  const image = book.coverUrl || coverByTitle[book.title];
+  const [storedImage, setStoredImage] = useState<string>();
+  useEffect(() => {
+    let active = true;
+    let objectUrl: string | undefined;
+    setStoredImage(undefined);
+    if (isStoredCover(book.coverUrl)) {
+      void getBookCover(book.id).then(url => {
+        if (!active) {
+          if (url) URL.revokeObjectURL(url);
+          return;
+        }
+        objectUrl = url;
+        setStoredImage(url);
+      }).catch(() => undefined);
+    }
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [book.id, book.coverUrl]);
+  const image = storedImage || (book.coverUrl && !isStoredCover(book.coverUrl) ? book.coverUrl : undefined) || coverByTitle[book.title];
   const fallback = fallbackCovers[Number(book.id.replace(/\D/g, '') || 0) % fallbackCovers.length];
 
   return (

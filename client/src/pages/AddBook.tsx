@@ -48,7 +48,7 @@ export default function AddBook() {
     setForm(current => ({ ...current, coverUrl: '' }));
   }
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
     if (!form.title.trim()) {
       toast.error('Informe pelo menos o título para registrar o tomo.');
@@ -56,7 +56,8 @@ export default function AddBook() {
     }
     const pages = Math.max(1, Number(form.pages) || 1);
     const author = form.author.trim() || 'Autor desconhecido';
-    const result = storageService.addBook({
+    try {
+      await storageService.addBook({
       id: crypto.randomUUID(),
       title: form.title.trim(),
       author,
@@ -74,10 +75,13 @@ export default function AddBook() {
       completedDate: form.status === 'completed' ? new Date().toISOString() : undefined,
       addedDate: new Date().toISOString(),
       notes: [],
-      quotes: [],
-    });
-    toast.success(result.coverRemoved ? 'Novo tomo registrado com a capa padrão da Vortex.' : 'Novo tomo registrado na Vortex.');
-    navigate('/library');
+        quotes: [],
+      });
+      toast.success('Novo tomo registrado na Vortex.');
+      navigate('/library');
+    } catch {
+      toast.error('Não foi possível guardar este tomo e sua capa. Verifique o espaço disponível no dispositivo e tente novamente.');
+    }
   }
 
   return (
