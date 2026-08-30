@@ -4,7 +4,7 @@
 
 # VORTEX — Biblioteca Virtual
 
-### ✦ Transforme sua estante em uma jornada.
+###  Transforme sua estante em uma jornada.
 
 Uma biblioteca digital pessoal inspirada em **fantasia medieval, bibliotecas arcanas e mundos de fantasia**, criada para organizar livros, acompanhar leituras e transformar cada página em parte de uma jornada.
 
@@ -20,13 +20,13 @@ Uma biblioteca digital pessoal inspirada em **fantasia medieval, bibliotecas arc
 
 <br>
 
-**[📚 Explorar o projeto](https://github.com/Yurihbo/VORTEX)**
+**[ Explorar o projeto](https://github.com/Yurihbo/VORTEX)**
 
 </div>
 
 ---
 
-## ✦ Sobre o VORTEX
+##  Sobre o VORTEX
 
 O **VORTEX** é uma biblioteca virtual pessoal desenvolvida para tornar o acompanhamento de leituras mais organizado, visual e envolvente.
 
@@ -36,7 +36,7 @@ A interface foi projetada com uma identidade visual inspirada em **bibliotecas a
 
 ---
 
-## 🖼️ Visão geral
+##  Visão geral
 
 <div align="center">
 
@@ -54,9 +54,9 @@ A interface foi projetada com uma identidade visual inspirada em **bibliotecas a
 
 ---
 
-## 🏛️ O que existe dentro da biblioteca?
+##  O que existe dentro da biblioteca?
 
-### 📖 Biblioteca
+###  Biblioteca
 
 O coração do VORTEX.
 
@@ -68,7 +68,7 @@ O coração do VORTEX.
 - Capas e informações dos livros
 - Acesso ao detalhamento de cada obra
 
-### 🔮 Grimório do livro
+###  Grimório do livro
 
 Cada tomo possui uma área própria para acompanhar a jornada de leitura.
 
@@ -79,7 +79,7 @@ Cada tomo possui uma área própria para acompanhar a jornada de leitura.
 - Fragmentos marcantes
 - Informações detalhadas da obra
 
-### ✦ Dashboard
+###  Dashboard
 
 Uma visão geral da biblioteca logo na entrada.
 
@@ -91,15 +91,15 @@ Uma visão geral da biblioteca logo na entrada.
 - Sugestões de leitura
 - Panorama da coleção
 
-### 🗺️ Coleções
+###  Coleções
 
 Organize os livros em grupos e crie diferentes caminhos dentro da sua biblioteca.
 
-### ❤️ Favoritos
+###  Favoritos
 
 Mantenha seus tomos mais importantes sempre por perto.
 
-### 🎯 Metas e desafios
+###  Metas e desafios
 
 Transforme a leitura em uma jornada contínua.
 
@@ -109,11 +109,11 @@ Transforme a leitura em uma jornada contínua.
 - Contador de constância
 - Evolução do leitor
 
-### 🏆 Conquistas
+###  Conquistas
 
 Marcos desbloqueados conforme o leitor avança em sua jornada.
 
-### 📊 Estatísticas
+###  Estatísticas
 
 Uma visão analítica da sua biblioteca.
 
@@ -125,7 +125,7 @@ Uma visão analítica da sua biblioteca.
 - Reinos do conhecimento
 - Evolução da leitura
 
-### 👤 Perfil
+###  Perfil
 
 Um espaço para personalizar a identidade do leitor.
 
@@ -137,13 +137,13 @@ Um espaço para personalizar a identidade do leitor.
 - Preferências
 - Configurações de leitura
 
-### 💾 Dados e backup
+###  Dados e backup
 
 O projeto também contempla gerenciamento dos dados do leitor, incluindo exportação e importação de informações em JSON.
 
 ---
 
-## 📱 PWA — sua biblioteca em qualquer lugar
+##  PWA — sua biblioteca em qualquer lugar
 
 O VORTEX foi estruturado como uma **Progressive Web App**.
 
@@ -162,7 +162,7 @@ O projeto possui:
 
 ---
 
-## 🧩 Stack utilizada
+##  Stack utilizada
 
 ### Front-end
 
@@ -198,7 +198,7 @@ O projeto possui:
 
 ---
 
-## 🏗️ Arquitetura
+##  Arquitetura
 
 O projeto possui uma organização separando a aplicação em camadas:
 
@@ -257,7 +257,7 @@ Profile
 
 ---
 
-## 🚀 Executando localmente
+##  Executando localmente
 
 ### Pré-requisitos
 
@@ -292,7 +292,7 @@ Depois, abra o endereço exibido pelo Vite no terminal.
 
 ---
 
-## 📦 Scripts disponíveis
+##  Scripts disponíveis
 
 ```bash
 # Desenvolvimento
@@ -316,26 +316,26 @@ pnpm start
 
 ---
 
-## 🎨 Identidade visual
+##  Identidade visual
 
 O VORTEX foi pensado para fugir do visual tradicional de gerenciadores de livros.
 
 A direção artística combina:
 
-- 🌑 Azul-marinho e fundos escuros
-- ✦ Dourado como cor de destaque
-- 📜 Tons de pergaminho
-- 🏰 Referências a bibliotecas medievais
-- 🔮 Elementos de fantasia e magia
-- 📖 Tipografia editorial
-- 🗝️ Ícones e detalhes ornamentais
-- 🐉 Atmosfera de mundos fantásticos
+-  Azul-marinho e fundos escuros
+-  Dourado como cor de destaque
+-  Tons de pergaminho
+-  Referências a bibliotecas medievais
+-  Elementos de fantasia e magia
+-  Tipografia editorial
+-  Ícones e detalhes ornamentais
+-  Atmosfera de mundos fantásticos
 
 A intenção é que o usuário não sinta que está apenas utilizando um sistema de cadastro, mas que está **entrando em sua própria biblioteca**.
 
 ---
 
-## 📐 Experiência responsiva
+##  Experiência responsiva
 
 A interface foi planejada para diferentes formatos:
 
@@ -361,7 +361,7 @@ A interface foi planejada para diferentes formatos:
 
 ---
 
-## 🧠 Conceito
+##  Conceito
 
 > **"Toda biblioteca guarda histórias. O VORTEX guarda a jornada de quem as lê."**
 
@@ -377,7 +377,7 @@ o VORTEX busca responder:
 
 ---
 
-## 🛠️ Estado do projeto
+##  Estado do projeto
 
 O VORTEX está em **desenvolvimento contínuo**.
 
@@ -396,7 +396,7 @@ A arquitetura foi construída pensando na expansão da biblioteca, permitindo ad
 
 ---
 
-## 🧪 Qualidade e desenvolvimento
+##  Qualidade e desenvolvimento
 
 O projeto utiliza ferramentas modernas para manter o código organizado e verificável:
 
@@ -411,7 +411,7 @@ O projeto utiliza ferramentas modernas para manter o código organizado e verifi
 
 ---
 
-## 📂 Organização do código
+##  Organização do código
 
 A estrutura do VORTEX foi pensada para separar responsabilidades.
 
@@ -441,23 +441,23 @@ Constantes e elementos compartilhados entre as camadas.
 
 ---
 
-## 🌟 Destaques do projeto
+##  Destaques do projeto
 
 | Área | Destaque |
 |---|---|
-| 🎨 Design | Identidade visual própria de fantasia medieval |
-| 📚 Biblioteca | Catálogo e gerenciamento de livros |
-| 📊 Dados | Estatísticas e acompanhamento da leitura |
-| 🎯 Gamificação | Metas, desafios e conquistas |
-| 💾 Backup | Importação e exportação de dados |
-| 📱 PWA | Experiência instalável |
-| 🌙 Interface | Tema escuro inspirado em bibliotecas arcanas |
-| 📐 Responsividade | Desktop, tablet e mobile |
-| 🧩 Arquitetura | React + TypeScript + Node/Express |
+|  Design | Identidade visual própria de fantasia medieval |
+|  Biblioteca | Catálogo e gerenciamento de livros |
+|  Dados | Estatísticas e acompanhamento da leitura |
+|  Gamificação | Metas, desafios e conquistas |
+|  Backup | Importação e exportação de dados |
+|  PWA | Experiência instalável |
+|  Interface | Tema escuro inspirado em bibliotecas arcanas |
+|  Responsividade | Desktop, tablet e mobile |
+|  Arquitetura | React + TypeScript + Node/Express |
 
 ---
 
-## 🔐 Privacidade
+##  Privacidade
 
 O VORTEX foi concebido como uma biblioteca pessoal.
 
@@ -467,7 +467,7 @@ Os dados de leitura e informações do usuário devem ser tratados como dados pr
 
 ---
 
-## 🤝 Contribuição
+##  Contribuição
 
 Sugestões, melhorias e ideias são bem-vindas.
 
@@ -481,7 +481,7 @@ Faça suas alterações, valide o projeto e envie um Pull Request.
 
 ---
 
-## 📜 Licença
+##  Licença
 
 Este projeto está distribuído sob a licença **MIT**.
 
@@ -491,7 +491,7 @@ Consulte o arquivo [`LICENSE`](LICENSE) para mais informações.
 
 <div align="center">
 
-### ✦ VORTEX
+###  VORTEX
 
 **Uma biblioteca. Milhares de histórias. Uma jornada.**
 
